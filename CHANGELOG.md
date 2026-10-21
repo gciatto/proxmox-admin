@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/gciatto/proxmox-admin/compare/1.3.0...1.3.1) (2026-10-21)
+
+### Bug Fixes
+
+* **image:** install passlib, needed by Ansible's password_hash filter ([4f712d5](https://github.com/gciatto/proxmox-admin/commit/4f712d579a635f03c899dd1973e8515e9f4b9e35))
+
 ## [1.3.0](https://github.com/gciatto/proxmox-admin/compare/1.2.1...1.3.0) (2026-10-21)
 
 ### Features
