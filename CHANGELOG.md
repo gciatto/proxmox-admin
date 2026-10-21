@@ -1,3 +1,10 @@
+## [1.1.0](https://github.com/gciatto/proxmox-admin/compare/1.0.0...1.1.0) (2026-10-21)
+
+### Features
+
+* serve per-cluster repositories, with built-in Ansible defaults and pve-validate ([6f7f3e6](https://github.com/gciatto/proxmox-admin/commit/6f7f3e6da380a5b7860488c8bf2e078c9fbfbec9))
+* ship the launcher in the image for cluster repositories ([09a2ed4](https://github.com/gciatto/proxmox-admin/commit/09a2ed4f7cd6cdc6861d3a9566c6318d27343048))
+
 ## 1.0.0 (2026-10-21)
 
 ### Features
