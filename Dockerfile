@@ -27,7 +27,7 @@ COPY --from=node /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
 
 # Versions are kept up to date by Renovate (customManagers:dockerfileVersions).
 # renovate: datasource=galaxy-collection depName=community.proxmox
-ARG COMMUNITY_PROXMOX_VERSION=2.0.0
+ARG COMMUNITY_PROXMOX_VERSION=2.1.0
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
 ARG CLAUDE_CODE_VERSION=2.1.306
 # renovate: datasource=npm depName=@openai/codex
