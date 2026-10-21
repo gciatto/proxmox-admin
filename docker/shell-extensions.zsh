@@ -9,8 +9,9 @@ Proxmox admin commands:
   pve-inventory               Display inventory hosts/groups (local)
   pve-ping [group]            Verify Ansible SSH connectivity
   pve-shell GROUP 'COMMAND'   Run command on hosts via Ansible/SSH
-  pve-play NAME [args...]     Run ansible/playbooks/NAME.yml
+  pve-play NAME [args...]     Run ansible/playbooks/NAME.yml (cluster repo, else built-in)
   pve-tofu [args...]          Run OpenTofu in /workspace/tofu
+  pve-validate                Offline checks of the cluster repository (inventory, syntax, fmt)
   pve-agent [KEY]             Start ssh-agent and add mounted private key
 
 Native commands also work: px, ansible, ansible-playbook, tofu, ssh, jq.
@@ -38,9 +39,10 @@ pve-play() {
         echo "Usage: pve-play NAME [args...]" >&2
         return 2
     fi
-    local playbook=$1
+    local playbook=/workspace/ansible/playbooks/$1.yml
     shift
-    ansible-playbook "/workspace/ansible/playbooks/${playbook}.yml" "$@"
+    [[ -f $playbook ]] || playbook=/opt/proxmox-admin/ansible/playbooks/${playbook:t}
+    ansible-playbook "$playbook" "$@"
 }
 pve-tofu() { tofu -chdir=/workspace/tofu "$@"; }
 pve-agent() {

@@ -16,7 +16,6 @@ services:
       PROXMOX_VALIDATE_CERTS: "${PROXMOX_VALIDATE_CERTS:-true}"
       PROXMOX_CA_BUNDLE: "${PROXMOX_CA_BUNDLE:-}"
       PROXMOX_SSH_USER: "${PROXMOX_SSH_USER:-root}"
-      ANSIBLE_CONFIG: /workspace/ansible/ansible.cfg
       TF_PLUGIN_CACHE_DIR: /home/operator/.cache/tofu/plugins
       # AI CLIs: credentials as alternatives to a login stored in the mounted config dirs.
       # Passed through only when set in the invoking shell.

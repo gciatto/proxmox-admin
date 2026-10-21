@@ -1,88 +1,57 @@
 # Proxmox Admin
 
-A self-contained Docker/Compose administration workstation for a **remote Proxmox VE cluster**. Inspired by [almaai-unibo/image-huawei-admin](https://github.com/almaai-unibo/image-huawei-admin): start an interactive Zsh container, mount your own SSH credentials, and run convenient administration functions.
+A self-contained Docker administration workstation for **remote Proxmox VE clusters**. Inspired by [almaai-unibo/image-huawei-admin](https://github.com/almaai-unibo/image-huawei-admin): start an interactive Zsh container, mount your own SSH credentials, and run convenient administration functions.
 
 The image includes:
 
 - **Ansible** with `community.proxmox` for API administration and SSH-based host operations;
-- **OpenTofu** with the `bpg/proxmox` provider scaffold for declarative resources;
+- **OpenTofu** with the `bpg/proxmox` provider for declarative resources;
 - **Python** + Proxmoxer, exposing the `px` read-only cluster inspection CLI;
 - **Claude Code** (`claude`) and **Codex** (`codex`), to operate the cluster with AI assistance;
-- `ssh`, `ssh-agent`, `git`, `jq`, `ripgrep`, Zsh helper functions.
+- `ssh`, `ssh-agent`, `git`, `jq`, `ripgrep`, Zsh helper functions, built-in playbooks.
 
-## Requirements
+## How it is used: one configuration repository per cluster
+
+This repository is the **tool**: it builds, tests and releases the image to GHCR. Each cluster gets its own **configuration repository**, created from [template-proxmox-cluster](https://github.com/gciatto/template-proxmox-cluster) and shared by that cluster's administrators. It holds the shared settings (`cluster.env`), inventory, playbooks, OpenTofu resources, CA bundle and the rules for AI agents, pins an image version in its `compose.yaml` (upgraded by Renovate), and ships the `admin.sh` launcher. Personal secrets stay on each workstation. **Start there** to administer a cluster.
+
+### Requirements
 
 - Docker + Docker Compose v2 on each administrator's workstation (Linux/macOS);
 - network reachability to the Proxmox API (usually TCP `8006`) and to each Proxmox node over SSH (TCP `22`);
-- authorized SSH keys and trusted host entries in the administrator's `~/.ssh` directory;
+- authorized SSH keys and trusted host entries in the administrator's `~/.ssh` directory (SSH host-key checking is enabled, including in Ansible);
 - an individual Proxmox API token for API-based commands; **SSH-only operation does not need the token**.
 
 Use scoped personal accounts/tokens with permissions appropriate to each operator. SSH keys and token secrets are **never copied into the image**.
 
-## 1. One-time workstation configuration
+### Image contract
+
+The launcher (`admin.sh` + `compose.yaml`, here and in the template) runs an ephemeral container as the workstation's UID/GID (the entrypoint drops root privileges), with:
+
+| Mount | Container path | Notes |
+| --- | --- | --- |
+| Cluster repository (or this checkout) | `/workspace` | Read-write. |
+| `HOST_SSH_DIR` (default `~/.ssh`) | `/home/operator/.ssh` | Read-only. |
+| `HOST_PROXMOX_TOKEN_FILE` | `/run/secrets/proxmox-token` | Read-only; empty for SSH-only use. |
+| `HOST_CLAUDE_DIR`, `HOST_CODEX_DIR` | `/home/operator/.claude`, `/home/operator/.codex` | See [AI assistants](#ai-assistants-claude-code-codex). |
+
+From `/workspace`, the image uses `ansible/inventory/hosts.yml`, `ansible/playbooks/*.yml` (`pve-play NAME` falls back to the built-in `ping`, `node-facts`, `cluster-status`, `guests`), `ansible/ansible.cfg` if present (otherwise the built-in one), `tofu/`, and the CA bundle named by `PROXMOX_CA_BUNDLE`. Environment: `PROXMOX_HOST` (no scheme/port), `PROXMOX_PORT`, `PROXMOX_VALIDATE_CERTS`, `PROXMOX_CA_BUNDLE`, `PROXMOX_TOKEN_ID` (`user@realm!tokenname`), `PROXMOX_USER`, `PROXMOX_SSH_USER`. `pve-validate` checks a mounted repository offline (inventory, playbook syntax, OpenTofu formatting); cluster repositories run it in CI and in a pre-commit hook.
+
+### Trying the image from this checkout
+
+This repository has its own launcher, for development: it mounts this checkout at `/workspace`.
 
 ```bash
-cp .env.example .env
+cp .env.example .env                                            # endpoint, token ID, TLS
 cp ansible/inventory/hosts.yml.example ansible/inventory/hosts.yml
+mkdir -p ~/.config/proxmox-admin && chmod 700 ~/.config/proxmox-admin
+printf '%s' 'YOUR-PERSONAL-API-TOKEN-SECRET' > ~/.config/proxmox-admin/token
+chmod 600 ~/.config/proxmox-admin/token
+./admin.sh --build          # build the image locally and open its shell
+./admin.sh                  # later runs; or set PVE_ADMIN_IMAGE in .env and use --pull
+./admin.sh px nodes         # one-off commands
 ```
 
-Edit `.env` to set your `PROXMOX_HOST`, `PROXMOX_TOKEN_ID`, and optional TLS settings. `PROXMOX_HOST` is a hostname or IP **without** scheme/port. Edit `ansible/inventory/hosts.yml` with your real cluster nodes and SSH username.
-
-Store your *personal API token secret* in a separate file:
-
-```bash
-mkdir -p "$HOME/.config/proxmox-admin"
-chmod 700 "$HOME/.config/proxmox-admin"
-printf '%s' 'YOUR-PERSONAL-API-TOKEN-SECRET' > "$HOME/.config/proxmox-admin/token"
-chmod 600 "$HOME/.config/proxmox-admin/token"
-```
-
-The token ID is `user@realm!tokenname` and belongs in `.env`; the token *secret* belongs in `~/.config/proxmox-admin/token`. No token is required for SSH-only commands: leave the token file empty. Do not put secrets into tracked files.
-
-Ensure the trusted SSH host keys are recorded in `~/.ssh/known_hosts` on the **client**. Verify each fingerprint with your cluster administrator before adding it. SSH host-key checking is enabled, including in Ansible.
-
-For a cluster using a private CA, put the full trusted CA bundle at `config/certs/ca-bundle.pem` and set:
-
-```dotenv
-PROXMOX_CA_BUNDLE=/workspace/config/certs/ca-bundle.pem
-```
-
-The CA bundle is mounted from the local checkout into the container, not baked into the image. TLS verification remains enabled by default.
-
-## 2. Run
-
-If your team publishes a prebuilt image to GHCR, set `PVE_ADMIN_IMAGE` in `.env` to that image (for example, `ghcr.io/YOUR-ORG/proxmox-admin:latest`) and simply run `./admin.sh`. You can refresh the image with `./admin.sh --pull`. GitHub Actions builds and publishes that image on every release (see [CI and releases](#ci-and-releases-with-github-actions)).
-
-Alternatively, build the image locally and enter the shell:
-
-```bash
-./admin.sh --build
-```
-
-Subsequent invocations:
-
-```bash
-./admin.sh
-```
-
-Each invocation creates an ephemeral container running tools as your workstation UID/GID (the entrypoint drops root privileges). Your SSH keys are mounted read-only from `${HOME}/.ssh` at `/home/operator/.ssh`, the checkout is mounted at `/workspace`, and the token secret is mounted read-only from `~/.config/proxmox-admin/token` at `/run/secrets/proxmox-token` (outside the writable workspace).
-
-To mount another SSH directory instead:
-
-```bash
-HOST_SSH_DIR="$HOME/.ssh-cluster" ./admin.sh
-```
-
-To use a different token-secret file, set `HOST_PROXMOX_TOKEN_FILE` to its absolute path. The launcher creates an empty token file automatically for SSH-only users.
-
-Run commands directly without opening a shell:
-
-```bash
-./admin.sh px nodes
-./admin.sh px --json guests
-./admin.sh ansible-playbook ansible/playbooks/ping.yml
-./admin.sh tofu -chdir=/workspace/tofu version
-```
+`HOST_SSH_DIR`, `HOST_PROXMOX_TOKEN_FILE`, `HOST_CLAUDE_DIR` and `HOST_CODEX_DIR` override the mounted paths.
 
 ### Interactive shell functions
 
@@ -101,6 +70,7 @@ pve-play cluster-status      # execute a Proxmox API playbook
 pve-play guests              # query guest inventory via Ansible
 pve-tofu init                # download provider into local plugin cache
 pve-tofu plan                # show changes (initially empty)
+pve-validate                 # offline checks of the mounted repository
 claude                       # Claude Code, see "AI assistants" below
 codex                        # Codex CLI
 ```
@@ -119,7 +89,7 @@ pve-agent ~/.ssh/id_ed25519
 
 ### AI assistants (Claude Code, Codex)
 
-Inside the container, `claude` and `codex` run in `/workspace` with the same tools and credentials as you. They read `AGENTS.md` (Claude through the `CLAUDE.md` link), which tells them to inspect read-only first and to **ask before any change** to the cluster. They still act with *your* SSH keys and API token: review what they propose before approving it, and prefer a scoped token over an all-powerful one.
+Inside the container, `claude` and `codex` run in `/workspace` with the same tools and credentials as you. They read the cluster repository's `AGENTS.md` (Claude through the `CLAUDE.md` link), which tells them to inspect read-only first and to **ask before any change** to the cluster. They still act with *your* SSH keys and API token: review what they propose before approving it, and prefer a scoped token over an all-powerful one.
 
 `admin.sh` bind-mounts your own configuration, read-write, so settings, logins and session history are shared with your workstation:
 
@@ -156,7 +126,7 @@ Per-operator tokens should be scoped and revocable; if using privilege-separated
 ├── compose.yaml                   # bind mounts, UID/GID, runtime vars
 ├── compose.build.yaml             # optional local image build
 ├── docker/                        # entrypoint + interactive Zsh functions
-├── AGENTS.md (CLAUDE.md)          # rules for AI agents: developing and operating
+├── AGENTS.md (CLAUDE.md)          # rules for AI agents developing this repository
 ├── src/pxadmin/                   # Python read-only REST API CLI
 ├── tests/                         # CLI unit tests
 ├── scripts/                       # checks, Git hooks, smoke and release scripts
@@ -167,24 +137,18 @@ Per-operator tokens should be scoped and revocable; if using privilege-separated
 ├── renovate.json                  # Renovate dependency updates
 ├── CHANGELOG.md                   # generated by semantic-release
 ├── ansible/
+│   ├── ansible.cfg                # built into the image as the default configuration
 │   ├── inventory/hosts.yml.example
-│   └── playbooks/               # SSH and API query examples
-├── tofu/                          # bpg/proxmox provider scaffold
-└── config/certs/                  # optional private CA bundle (ignored)
+│   └── playbooks/                 # built-in SSH and API query playbooks
+├── tofu/                          # bpg/proxmox provider scaffold (smoke-test fixture)
+└── config/certs/                  # optional private CA bundle for local trials (ignored)
 ```
 
 The `.env`, personal token file, local SSH keys, generated OpenTofu state, and the real inventory are ignored by Git and excluded from the Docker build context.
 
-## Shared-state policy for OpenTofu
+## OpenTofu
 
-The included OpenTofu configuration has **no managed resources**. Do not let multiple operators independently apply the same infrastructure using separate local state files. Before adding production resources:
-
-1. Agree which VM/CT/storage resources are OpenTofu-owned versus Ansible-owned.
-2. Configure a team-accessible remote state backend with locking and backups.
-3. Import existing resources into the shared state before making changes.
-4. Run `pve-tofu plan` before `pve-tofu apply`.
-
-The default `bpg/proxmox` provider version in `tofu/versions.tf` is pinned to the version current when this starter was prepared. Review Proxmox VE compatibility before upgrading it.
+OpenTofu resources belong to cluster repositories, which must configure a shared remote state backend before adding any: see [template-proxmox-cluster](https://github.com/gciatto/template-proxmox-cluster). The `tofu/` scaffold here only exercises the tooling.
 
 ## CI and releases with GitHub Actions
 
@@ -209,20 +173,7 @@ Commit messages must follow [Conventional Commits](https://www.conventionalcommi
 
 Assuming the repository is `YOUR-ORG/proxmox-admin` (names are normalized to lowercase), release `1.2.3` publishes `ghcr.io/your-org/proxmox-admin:1.2.3`, `:1.2`, `:1` and `:latest`. Images carry an SBOM and BuildKit provenance attestations.
 
-On each administrator's workstation put the following in `.env`:
-
-```dotenv
-PVE_ADMIN_IMAGE=ghcr.io/your-org/proxmox-admin:latest
-```
-
-Then run:
-
-```bash
-./admin.sh --pull          # pull the published image and open its shell
-./admin.sh                 # reuse locally cached image on later runs
-```
-
-For reproducibility, pin a version (`:1.2.3`), a major (`:1`) or an image digest instead of `:latest`. Operator SSH keys, API token files, local inventories and OpenTofu state are explicitly excluded from the Docker build context; no Proxmox credentials are provided to CI.
+Cluster repositories pin an exact version in their `compose.yaml`, and Renovate proposes upgrades there. Operator SSH keys, API token files, local inventories and OpenTofu state are explicitly excluded from the Docker build context; no Proxmox credentials are provided to CI.
 
 ### Dependency updates (Renovate)
 
@@ -252,16 +203,3 @@ Optional and local: they live in `.git/hooks/`, so each clone opts in with `uv r
 | `conventional-commits` | every commit message | the subject is not `<type>[(scope)][!]: <description>` |
 | `no-ai-signature` | every commit message | it has an AI-assistant trailer or "Generated with" footer |
 | `pre-push` | every `git push` | `scripts/check.sh --test` fails |
-
-## Live cluster checks (administrator workstation)
-
-After configuring your own SSH access and API token, validate connectivity:
-
-```bash
-./admin.sh px doctor                         # local checks only
-./admin.sh ansible-inventory --graph         # inspect configured hosts
-./admin.sh ansible-playbook ansible/playbooks/ping.yml  # SSH to nodes
-./admin.sh px nodes                          # Proxmox API
-```
-
-The `px` CLI provides read-only inspection. Use Ansible or OpenTofu for intentional changes; unlike CI smoke tests, these checks require the configured cluster and credentials.

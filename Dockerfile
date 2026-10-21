@@ -9,7 +9,6 @@ FROM python:3.12-slim-bookworm
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    ANSIBLE_CONFIG=/workspace/ansible/ansible.cfg \
     ANSIBLE_COLLECTIONS_PATH=/opt/ansible/collections \
     ZDOTDIR=/opt/proxmox-admin \
     HOME=/home/operator \
@@ -46,10 +45,14 @@ RUN pip install --no-cache-dir 'ansible-core>=2.18,<2.21' . \
     && ansible-galaxy collection install "community.proxmox:==${COMMUNITY_PROXMOX_VERSION}" -p /opt/ansible/collections
 
 COPY docker/entrypoint.sh /usr/local/bin/proxmox-entrypoint
+COPY docker/pve-validate /usr/local/bin/pve-validate
 COPY docker/zshrc /opt/proxmox-admin/.zshrc
 COPY docker/shell-extensions.zsh /opt/proxmox-admin/shell-extensions.zsh
+# Defaults for cluster repositories mounted at /workspace, which may override them.
+COPY ansible/ansible.cfg /opt/proxmox-admin/ansible/ansible.cfg
+COPY ansible/playbooks /opt/proxmox-admin/ansible/playbooks
 # Build-time leftovers in HOME are root-owned and would not be writable by the operator UID.
-RUN chmod 0755 /usr/local/bin/proxmox-entrypoint \
+RUN chmod 0755 /usr/local/bin/proxmox-entrypoint /usr/local/bin/pve-validate \
     && rm -rf /home/operator/.ansible /home/operator/.npm \
     && mkdir -p /home/operator/.cache/tofu/plugins /workspace \
     && chmod 0755 /home/operator

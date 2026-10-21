@@ -66,6 +66,13 @@ if [ -n "${PROXMOX_CA_BUNDLE:-}" ]; then
     export SSL_CERT_FILE="$PROXMOX_CA_BUNDLE"
 fi
 
+# The cluster repository mounted at /workspace may override the image's Ansible defaults.
+if [ -z "${ANSIBLE_CONFIG:-}" ]; then
+    ANSIBLE_CONFIG=/opt/proxmox-admin/ansible/ansible.cfg
+    [ -f /workspace/ansible/ansible.cfg ] && ANSIBLE_CONFIG=/workspace/ansible/ansible.cfg
+    export ANSIBLE_CONFIG
+fi
+
 # Ansible modules and the CLI run from the container's Python installation.
 export ANSIBLE_PYTHON_INTERPRETER=/usr/local/bin/python3
 

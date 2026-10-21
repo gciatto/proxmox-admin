@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+
+# Offline checks of the cluster repository mounted at /workspace (no cluster access).
+cd /workspace
+ansible-inventory --list >/dev/null
+for playbook in ansible/playbooks/*.yml; do
+    [ -e "$playbook" ] || continue
+    ansible-playbook --syntax-check "$playbook" >/dev/null
+done
+if [ -d tofu ]; then
+    tofu -chdir=tofu fmt -check -recursive
+fi
+echo 'Cluster repository OK'

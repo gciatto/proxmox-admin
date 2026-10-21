@@ -2,20 +2,7 @@
 
 Guidance for coding agents working in this repository. User-facing docs live in `README.md`; this file covers what an agent needs to change the code safely.
 
-## Two kinds of sessions
-
-- **Developing this repository** (most of this file): you change the image, scripts, CLI or docs.
-- **Operating a cluster from inside the container**: an administrator started `claude` or `codex` in the `./admin.sh` shell (`/workspace`, with `PROXMOX_HOST` set). Read the next section first.
-
-## Operating a cluster (inside the container)
-
-You act with the administrator's own SSH keys and Proxmox API token on a live cluster, possibly in production.
-
-- Inspect with read-only commands first: `px [--json] status|nodes|guests|storage|version`, `px doctor`, `pve-inventory`, `ansible-playbook ansible/playbooks/{ping,node-facts,cluster-status,guests}.yml`, `tofu plan`.
-- **Ask before any change**: anything that starts, stops, migrates, creates, deletes or reconfigures guests, nodes, storage, users or the network; `pve-shell` / `ansible -m shell` commands that are not read-only; `tofu apply`; playbook runs that change state (run them with `--check --diff` first and show the result). State what will change, on which hosts or guests, and how to undo it.
-- Prefer changes through a playbook under `ansible/playbooks/` or an OpenTofu resource over ad-hoc commands, so they are reviewable and repeatable. Mind the OpenTofu shared-state policy in `README.md`.
-- Never print, copy or commit secrets: the token file (`/run/secrets/proxmox-token`), `PROXMOX_TOKEN_SECRET`, `PROXMOX_VE_API_TOKEN`, SSH private keys, `.env`.
-- Commits and pushes follow the Git rules below.
+Operating a cluster happens in a separate cluster repository created from [template-proxmox-cluster](https://github.com/gciatto/template-proxmox-cluster), whose own `AGENTS.md` holds the operator rules. If you are in `/workspace` of a running admin container with this repository mounted, those rules apply here too: inspect read-only first and **ask before any change** to the cluster.
 
 ## What this is
 
@@ -28,12 +15,13 @@ A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE c
 | `admin.sh` | Host-side launcher: exports `ADMIN_UID/GID`, `HOST_SSH_DIR`, `HOST_PROXMOX_TOKEN_FILE`, `HOST_CLAUDE_DIR`, `HOST_CODEX_DIR` (user's `~/.claude`/`~/.codex`, else `.local/claude`/`.local/codex`); creates `.local/cache` and an empty token file; `--build` / `--pull`; then `docker compose run --rm admin "$@"`. |
 | `compose.yaml` / `compose.build.yaml` | Runtime mounts and env; the build file only adds `build: .`. Image defaults to `proxmox-admin:local`, overridden by `PVE_ADMIN_IMAGE`. |
 | `Dockerfile` | `python:3.12-slim-bookworm` + `tofu` from `ghcr.io/opentofu/opentofu:1-minimal` + Node from `node:24-bookworm-slim`; installs `ansible-core`, the `px` package, and Claude Code / Codex via npm. Versions pinned as `ARG`s with `# renovate:` comments. |
-| `docker/entrypoint.sh` | Runs as root, creates passwd/group entries for the host UID/GID, drops privileges via `gosu`, then derives env vars (see below). |
+| `docker/entrypoint.sh` | Runs as root, creates passwd/group entries for the host UID/GID, drops privileges via `gosu`, then derives env vars (see below) and picks `ANSIBLE_CONFIG` (`/workspace/ansible/ansible.cfg`, else the built-in one). |
+| `docker/pve-validate` | Offline checks of the repository mounted at `/workspace`; used by cluster repositories' CI and hooks. |
 | `docker/shell-extensions.zsh`, `docker/zshrc` | `pve-*` Zsh helpers: thin wrappers around `px`, `ansible`, `ansible-playbook`, `tofu`. |
 | `src/pxadmin/cli.py` | The whole `px` CLI (`doctor`, `status`, `nodes`, `guests`, `storage`, `version`, `--json`). Entry point declared in `pyproject.toml`. |
 | `tests/test_cli.py` | stdlib `unittest` tests for `px`. |
-| `ansible/` | `ansible.cfg`, example inventory (group `proxmox_nodes`), and playbooks: `ping`, `node-facts` (SSH), `cluster-status`, `guests` (API on `localhost`). |
-| `tofu/` | Provider scaffold only, with **no managed resources** on purpose. |
+| `ansible/` | `ansible.cfg` and playbooks `ping`, `node-facts` (SSH), `cluster-status`, `guests` (API on `localhost`), **copied into the image** under `/opt/proxmox-admin/ansible/` as defaults for cluster repositories; example inventory (group `proxmox_nodes`). |
+| `tofu/` | Provider scaffold only, with **no managed resources** on purpose; a smoke-test fixture. Real resources live in cluster repositories. |
 | `scripts/check.sh` | All source checks (shell syntax, YAML); `--test` adds unit tests. Used by CI and the Git hooks, always through `uv run`. |
 | `scripts/check-yaml.py` | YAML parse check plus assertions on CI/release workflow wiring (PyYAML, from the uv `dev` group). |
 | `scripts/smoke-image.sh` | Runs tools inside a built image under an arbitrary UID/GID, with no cluster access. |
@@ -74,7 +62,7 @@ When you add a new setting, wire it through all of these layers: `.env.example`,
 - **`px` stays read-only.** Changes go through Ansible/OpenTofu. Error messages must not print credential values. API playbook tasks use `no_log: true`.
 - **`proxmoxer` is imported lazily inside `connect()`** so tests run with only the stdlib (CI doesn't install the package). Keep new imports of third-party packages lazy, or update CI.
 - `PROXMOX_TOKEN_ID` must be `user@realm!tokenname`, and its prefix must equal `PROXMOX_USER` (enforced in `Config.from_env`).
-- In-container paths are hard-coded to `/workspace` (inventory, `ansible.cfg`, playbooks, tofu dir) and `/home/operator`.
+- **The image contract is shared with cluster repositories** (see `README.md`, "Image contract", and `../template-proxmox-cluster`): mount points, `/workspace` layout, env vars, `pve-*` helpers, `pve-validate`. Changing it is a breaking change (`feat!:`/`fix!:`) and needs the template updated too; `admin.sh`/`compose.yaml` there are adapted copies of the ones here.
 - `tofu/` must pass `tofu fmt -check -recursive`. Don't add managed resources without the shared-remote-state setup described in the README.
 - `release.yml` must keep `publish.needs: verify` and `verify.uses: ./.github/workflows/ci.yml`. `ci.yml` must keep `pull_request` and `workflow_call` triggers. `check-yaml.py` asserts all of these.
 - Releases are made only by semantic-release on `main`/`master`: never create tags (plain `1.2.3`, no `v`) or bump the version by hand (it does `uv version`, keeping `pyproject.toml` and `uv.lock` in sync). `CHANGELOG.md` is generated.

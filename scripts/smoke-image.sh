@@ -33,7 +33,22 @@ docker run --rm \
     tofu -chdir=/workspace/tofu fmt -check -recursive
 
     zsh -fc "source /opt/proxmox-admin/.zshrc && pve-help" >/dev/null
+    pve-validate
   '
+
+# A cluster repository without its own Ansible config or playbooks uses the image's defaults.
+empty=$(mktemp -d)
+docker run --rm \
+  --env ADMIN_UID=23456 \
+  --env ADMIN_GID=23456 \
+  --volume "$empty:/workspace:ro" \
+  "$image" \
+  zsh -fc '
+    test "$ANSIBLE_CONFIG" = /opt/proxmox-admin/ansible/ansible.cfg
+    source /opt/proxmox-admin/.zshrc >/dev/null
+    pve-play ping -i localhost, --syntax-check >/dev/null
+  '
+rmdir "$empty"
 
 # Test the exact operator entrypoint too: Compose and the wrapper must work
 # with an empty token file and an isolated (non-sensitive) SSH mount.

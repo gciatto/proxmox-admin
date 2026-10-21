@@ -8,6 +8,7 @@ for script in admin.sh scripts/*.sh; do
     bash -n "$script"
 done
 sh -n docker/entrypoint.sh
+sh -n docker/pve-validate
 python3 scripts/check-yaml.py
 if [[ "${1:-}" == --test ]]; then
     python3 -m unittest discover -s tests -v
