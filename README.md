@@ -171,10 +171,11 @@ Commit messages must follow [Conventional Commits](https://www.conventionalcommi
 1. Push this project to a GitHub repository (e.g., `YOUR-ORG/proxmox-admin`) and enable GitHub Actions. If your organization restricts `GITHUB_TOKEN` or package publication, allow Actions to write GitHub Packages.
 2. Use branch protection/rulesets for `main`/`master`, requiring passing checks on pull requests. semantic-release pushes a release commit to that branch: if protection forbids it for `GITHUB_TOKEN`, add a `RELEASE_TOKEN` repository secret (a token allowed to push to the branch and create releases). Without it, `GITHUB_TOKEN` is used.
 3. After the first release, review the GHCR package's visibility and grant team access as appropriate. An administrator pulling a private image must first authenticate to GHCR (e.g., with a GitHub token with `read:packages` permission).
+4. Optionally, to also publish to Docker Hub, add a `DOCKERHUB_USERNAME` repository **variable** and a `DOCKERHUB_TOKEN` repository **secret** (a Docker Hub access token with write permission). Without the variable, Docker Hub is skipped.
 
 ### Image tags
 
-Assuming the repository is `YOUR-ORG/proxmox-admin` (names are normalized to lowercase), release `1.2.3` publishes `ghcr.io/your-org/proxmox-admin:1.2.3`, `:1.2`, `:1` and `:latest`. Images carry an SBOM and BuildKit provenance attestations.
+Assuming the repository is `YOUR-ORG/proxmox-admin` (names are normalized to lowercase), release `1.2.3` publishes `ghcr.io/your-org/proxmox-admin:1.2.3`, `:1.2`, `:1` and `:latest`, plus the same tags of `docker.io/DOCKERHUB_USERNAME/proxmox-admin` when Docker Hub is configured. Images carry an SBOM and BuildKit provenance attestations.
 
 Cluster repositories pin an exact version in their `compose.yaml`, and Renovate proposes upgrades there. Operator SSH keys, API token files, local inventories and OpenTofu state are explicitly excluded from the Docker build context; no Proxmox credentials are provided to CI.
 

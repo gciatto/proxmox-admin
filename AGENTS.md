@@ -27,7 +27,7 @@ A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE c
 | `scripts/check-yaml.py` | YAML parse check plus assertions on CI/release workflow wiring (PyYAML, from the uv `dev` group). |
 | `scripts/smoke-image.sh` | Runs tools inside a built image under an arbitrary UID/GID, with no cluster access. |
 | `scripts/githooks.py` | Installs/removes local Git hooks (`install|uninstall [HOOK...]`); also the commit-msg checks. |
-| `scripts/release-image.sh` | Builds and pushes the multi-arch image to GHCR; called by semantic-release only. |
+| `scripts/release-image.sh` | Builds and pushes the multi-arch image to GHCR (and Docker Hub when `DOCKERHUB_USERNAME` is set); called by semantic-release only. |
 | `.github/workflows/` | `ci.yml` (tests + amd64/arm64 smoke) and `release.yml` (reuses `ci.yml`, then runs semantic-release). |
 | `package.json`, `release.config.mjs` | semantic-release: DanySK's conventional-commits preset + image push, GitHub release, release commit. |
 | `renovate.json` | Renovate; `customManagers:dockerfileVersions` tracks the `# renovate:` `ARG`s in the Dockerfile. |

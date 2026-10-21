@@ -23,7 +23,7 @@ jobs:
       contents: read
 
   release:
-    name: Release with semantic-release (GitHub release + GHCR image)
+    name: Release with semantic-release (GitHub release + GHCR/Docker Hub image)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: verify
@@ -51,6 +51,12 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Authenticate to Docker Hub
+        if: ${{ vars.DOCKERHUB_USERNAME != '' }}
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Get Node version
         id: node
         run: echo "version=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
@@ -64,3 +70,4 @@ jobs:
           npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          DOCKERHUB_USERNAME: ${{ vars.DOCKERHUB_USERNAME }}
