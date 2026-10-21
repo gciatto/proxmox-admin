@@ -21,14 +21,14 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
         with:
-          python-version: '3.12'
-      - name: Install YAML parser
-        run: python -m pip install 'PyYAML>=6,<7'
+          enable-cache: true
+      - name: Restore development environment
+        run: uv sync --locked
       - name: Shell/YAML checks and Python unit tests
-        run: bash scripts/check.sh --test
+        run: uv run bash scripts/check.sh --test
 
   image-smoke:
     name: Docker smoke test (${{ matrix.arch }})

@@ -18,10 +18,10 @@ from pathlib import Path
 MARKER = "# project-githook"
 # name -> (Git hook file, command)
 HOOKS = {
-    "pre-commit": ("pre-commit", "bash scripts/check.sh"),
-    "no-ai-signature": ("commit-msg", 'python3 scripts/githooks.py check-ai "$1"'),
-    "conventional-commits": ("commit-msg", 'python3 scripts/githooks.py check-msg "$1"'),
-    "pre-push": ("pre-push", "bash scripts/check.sh --test"),
+    "pre-commit": ("pre-commit", "uv run bash scripts/check.sh"),
+    "no-ai-signature": ("commit-msg", 'uv run python scripts/githooks.py check-ai "$1"'),
+    "conventional-commits": ("commit-msg", 'uv run python scripts/githooks.py check-msg "$1"'),
+    "pre-push": ("pre-push", "uv run bash scripts/check.sh --test"),
 }
 TAG = re.compile(r"# githook:(\S+)$", re.MULTILINE)
 TYPES = "build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test"

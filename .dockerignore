@@ -9,3 +9,4 @@ config/certs/
 __pycache__/
 *.egg-info/
 node_modules/
+.venv/

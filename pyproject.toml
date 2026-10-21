@@ -9,6 +9,9 @@ description = "Container-friendly Proxmox VE administration CLI"
 requires-python = ">=3.10"
 dependencies = ["proxmoxer>=2.3,<3", "requests>=2.31,<3"]
 
+[dependency-groups]
+dev = ["PyYAML>=6,<7"]
+
 [project.scripts]
 px = "pxadmin.cli:main"
 

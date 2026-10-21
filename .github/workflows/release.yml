@@ -39,6 +39,8 @@ jobs:
           fetch-depth: 0 # all history and tags, for semantic-release
           # Let semantic-release push with its own token (RELEASE_TOKEN may bypass branch protection).
           persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.3.0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Set up Buildx

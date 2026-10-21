@@ -137,6 +137,7 @@ Per-operator tokens should be scoped and revocable; if using privilege-separated
 ├── tests/                         # CLI unit tests
 ├── scripts/                       # checks, Git hooks, smoke and release scripts
 ├── .github/workflows/             # CI and release (GitHub + GHCR) pipelines
+├── uv.lock                        # locked Python (dev) dependencies, managed by uv
 ├── package.json                   # semantic-release (Node) dependencies
 ├── release.config.mjs             # semantic-release configuration
 ├── renovate.json                  # Renovate dependency updates
@@ -166,7 +167,7 @@ The default `bpg/proxmox` provider version in `tofu/versions.tf` is pinned to th
 | Workflow | When | What it does |
 | --- | --- | --- |
 | `.github/workflows/ci.yml` | Pull requests, pushes to non-primary branches, manual runs; reused by releases | Python unit tests, shell/YAML checks, and **build + smoke tests for both `linux/amd64` and `linux/arm64`**, with no credentials and no publication. |
-| `.github/workflows/release.yml` | Pushes to `main`/`master`, manual runs | Runs the **same CI workflow first**, then [semantic-release](https://semantic-release.gitbook.io/): computes the next version from the commit messages, pushes the multi-platform image to GitHub Container Registry (`ghcr.io`), then commits `CHANGELOG.md`/`pyproject.toml`, tags the release and creates a **GitHub release**. Nothing is released if a test or the image push fails. |
+| `.github/workflows/release.yml` | Pushes to `main`/`master`, manual runs | Runs the **same CI workflow first**, then [semantic-release](https://semantic-release.gitbook.io/): computes the next version from the commit messages, pushes the multi-platform image to GitHub Container Registry (`ghcr.io`), then commits `CHANGELOG.md`/`pyproject.toml`/`uv.lock`, tags the release and creates a **GitHub release**. Nothing is released if a test or the image push fails. |
 
 The CI container smoke tests verify that the installed `px`, Ansible/Proxmox collection, OpenTofu and Zsh helpers are callable; that Ansible inventories and playbooks parse; that OpenTofu files are formatted; and that the container drops privileges to an arbitrary non-root UID/GID. **Tests do not contact your Proxmox cluster.**
 
@@ -205,9 +206,11 @@ For reproducibility, pin a version (`:1.2.3`), a major (`:1`) or an image digest
 
 ### Running the checks yourself
 
+Local development uses [uv](https://docs.astral.sh/uv/) (Python 3.12, as in the image, from `.python-version`):
+
 ```bash
-python3 -m pip install 'PyYAML>=6,<7'  # for the YAML/workflow validator (skipped if missing)
-bash scripts/check.sh --test           # shell/YAML checks + unit tests (without --test: no tests)
+uv sync                                # .venv with the dev dependencies (PyYAML)
+uv run bash scripts/check.sh --test    # shell/YAML checks + unit tests (without --test: no tests)
 
 docker build -t proxmox-admin:ci .
 bash scripts/smoke-image.sh proxmox-admin:ci
@@ -217,11 +220,11 @@ The `scripts/smoke-image.sh` command requires Docker but not a Proxmox endpoint 
 
 ### Git hooks
 
-Optional and local: they live in `.git/hooks/`, so each clone opts in with `python3 scripts/githooks.py install [HOOK...]` (default: all; `uninstall` removes them). `git commit/push --no-verify` skips them once. Existing hooks not installed by this script are never overwritten.
+Optional and local: they live in `.git/hooks/`, so each clone opts in with `uv run python scripts/githooks.py install [HOOK...]` (default: all; `uninstall` removes them). `git commit/push --no-verify` skips them once. Existing hooks not installed by this script are never overwritten.
 
 | Hook | Runs on | Blocks when |
 | --- | --- | --- |
-| `pre-commit` | every `git commit` | `scripts/check.sh` fails |
+| `pre-commit` | every `git commit` | `scripts/check.sh` fails (run through `uv run`, like all hooks) |
 | `conventional-commits` | every commit message | the subject is not `<type>[(scope)][!]: <description>` |
 | `no-ai-signature` | every commit message | it has an AI-assistant trailer or "Generated with" footer |
 | `pre-push` | every `git push` | `scripts/check.sh --test` fails |

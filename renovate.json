@@ -41,6 +41,16 @@
       ],
       "semanticCommitType": "chore",
       "semanticCommitScope": "core-deps"
+    },
+    {
+      "description": "Development-only Python dependencies do not ship in the image",
+      "matchManagers": [
+        "pep621"
+      ],
+      "matchDepTypes": [
+        "dependency-groups"
+      ],
+      "semanticCommitScope": "deps"
     }
   ],
   "prConcurrentLimit": 25,

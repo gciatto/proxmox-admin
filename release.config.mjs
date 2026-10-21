@@ -5,12 +5,11 @@ import config from 'semantic-release-preconfigured-conventional-commits' with {t
 config.plugins.push(
     ["@semantic-release/exec", {
         "verifyConditionsCmd": "docker buildx version",
-        "prepareCmd": "sed -i -E 's/^version = \".*\"/version = \"${nextRelease.version}\"/' pyproject.toml"
-            + " && bash scripts/release-image.sh ${nextRelease.version}",
+        "prepareCmd": "uv version ${nextRelease.version} && bash scripts/release-image.sh ${nextRelease.version}",
     }],
     "@semantic-release/github",
     ["@semantic-release/git", {
-        "assets": ["CHANGELOG.md", "pyproject.toml"],
+        "assets": ["CHANGELOG.md", "pyproject.toml", "uv.lock"],
         "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
     }]
 );
