@@ -61,6 +61,7 @@ pve-doctor                   # validate local configuration
 pve-nodes                    # list Proxmox cluster nodes (API)
 pve-guests                   # list VMs and LXC containers (API)
 pve-status                   # show cluster membership (API)
+pve-snapshot                 # storage, networks, realms/users/ACL, HA, backups (API, cached)
 pve-inventory                # show Ansible host inventory
 pve-ping                     # SSH connectivity test for proxmox_nodes
 pve-shell pve1 'pveversion'  # run an SSH command on inventory target
@@ -74,6 +75,8 @@ pve-validate                 # offline checks of the mounted repository
 claude                       # Claude Code, see "AI assistants" below
 codex                        # Codex CLI
 ```
+
+`pve-snapshot` (`px snapshot`) reads ~20 API paths into `/tmp/pve-snapshot/` (`summary.md` and `snapshot.json`), which lives as long as the container. It is reused for 15 minutes (`--max-age`, `--refresh`), warmed up in the background when an interactive shell starts with a token configured, and read by AI agents at the start of a session. Paths the token may not read (e.g. without `Sys.Audit`) are listed as not collected. `px get PATH [KEY=VALUE...]` reads any other API path.
 
 The shell functions are thin conveniences; all native `ansible`, `ansible-playbook`, `tofu`, `ssh`, `python` and `px` commands work normally.
 

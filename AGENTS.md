@@ -18,8 +18,9 @@ A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE c
 | `docker/entrypoint.sh` | Runs as root, creates passwd/group entries for the host UID/GID, drops privileges via `gosu`, then derives env vars (see below) and picks `ANSIBLE_CONFIG` (`/workspace/ansible/ansible.cfg`, else the built-in one). |
 | `docker/pve-validate` | Offline checks of the repository mounted at `/workspace`; used by cluster repositories' CI and hooks. |
 | `docker/shell-extensions.zsh`, `docker/zshrc` | `pve-*` Zsh helpers: thin wrappers around `px`, `ansible`, `ansible-playbook`, `tofu`. |
-| `src/pxadmin/cli.py` | The whole `px` CLI (`doctor`, `status`, `nodes`, `guests`, `storage`, `version`, `--json`). Entry point declared in `pyproject.toml`. |
-| `tests/test_cli.py` | stdlib `unittest` tests for `px`. |
+| `src/pxadmin/cli.py` | The `px` CLI (`doctor`, `status`, `nodes`, `guests`, `storage`, `version`, `get PATH`, `snapshot`, `--json`). Entry point declared in `pyproject.toml`. |
+| `src/pxadmin/snapshot.py` | `px snapshot`: reads `CLUSTER_PATHS`/`NODE_PATHS` (errors recorded, never fatal), writes `summary.md` + `snapshot.json` to `/tmp/pve-snapshot` (`PVE_SNAPSHOT_DIR`). |
+| `tests/` | stdlib `unittest` tests for `px`, the snapshot and the Git hooks. |
 | `ansible/` | `ansible.cfg` and playbooks `ping`, `node-facts` (SSH), `cluster-status`, `guests` (API on `localhost`), **copied into the image** under `/opt/proxmox-admin/ansible/` as defaults for cluster repositories; example inventory (group `proxmox_nodes`). |
 | `tofu/` | Provider scaffold only, with **no managed resources** on purpose; a smoke-test fixture. Real resources live in cluster repositories. |
 | `scripts/check.sh` | All source checks (shell syntax, YAML); `--test` adds unit tests. Used by CI and the Git hooks, always through `uv run`. |

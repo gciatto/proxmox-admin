@@ -10,6 +10,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from pxadmin import snapshot
+
 
 @dataclass(frozen=True)
 class Config:
@@ -77,7 +79,8 @@ def print_result(data: Any, json_mode: bool) -> None:
         if not data:
             print("(no entries)")
             return
-        preferred = ("name", "node", "vmid", "type", "status", "online", "id")
+        preferred = ("name", "node", "vmid", "realm", "userid", "groupid", "poolid", "storage",
+                     "iface", "sid", "path", "type", "status", "online", "id")
         fields = [key for key in preferred if any(isinstance(item, dict) and key in item for item in data)]
         if not fields:
             print(json.dumps(data, indent=2, sort_keys=True, default=str))
@@ -124,13 +127,40 @@ def main(argv: list[str] | None = None) -> int:
         ("version", "Show API version"),
     ):
         sub.add_parser(command, help=description)
+    get = sub.add_parser("get", help="Read any API path, e.g. 'px get nodes/pve1/network'")
+    get.add_argument("path")
+    get.add_argument("params", nargs="*", metavar="KEY=VALUE", help="query parameters")
+    snap = sub.add_parser(
+        "snapshot",
+        help=f"Collect storage, networks, access, HA, backups... into {snapshot.DIR_SNAPSHOT} "
+        "(cached; reused while fresh) and print the summary",
+    )
+    snap.add_argument("--max-age", type=float, default=900, help="seconds a cached snapshot is reused")
+    snap.add_argument("--refresh", action="store_true", help="ignore the cached snapshot")
+    snap.add_argument("--quiet", action="store_true", help="only write the files")
     args = parser.parse_args(argv)
     if args.command == "doctor":
         return doctor()
+    if args.command == "snapshot" and not args.refresh:
+        cached = snapshot.fresh(args.max_age)
+        if cached:
+            if not args.quiet:
+                print(cached.with_name("snapshot.json").read_text() if args.json else cached.read_text())
+            return 0
     try:
         config = Config.from_env()
         pve = connect(config)
-        if args.command == "status":
+        if args.command == "snapshot":
+            pve.version.get()  # fail once, uncached, if the API is unreachable or rejects the token
+            data = snapshot.collect(lambda path: pve(path).get())
+            summary = snapshot.write(data)
+            if not args.quiet:
+                print(json.dumps(data, indent=1, default=str) if args.json else summary.read_text())
+            return 0
+        if args.command == "get":
+            params = dict(param.split("=", 1) for param in args.params if "=" in param)
+            data = pve(args.path.strip("/")).get(**params)
+        elif args.command == "status":
             data = pve.cluster.status.get()
         elif args.command == "nodes":
             data = pve.nodes.get()

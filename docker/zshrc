@@ -1,5 +1,7 @@
 export PATH="/usr/local/bin:$PATH"
 source /opt/proxmox-admin/shell-extensions.zsh
 if [[ -o interactive ]]; then
+  # Warm the snapshot cache for pve-snapshot and AI agents, without delaying the prompt.
+  [[ -s ${PROXMOX_TOKEN_SECRET_FILE:-/run/secrets/proxmox-token} ]] && (px snapshot --quiet >/dev/null 2>&1 &)
   pve-help
 fi

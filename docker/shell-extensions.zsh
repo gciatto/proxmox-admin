@@ -6,6 +6,8 @@ Proxmox admin commands:
   pve-nodes                   List cluster nodes (API)
   pve-guests                  List VMs and LXC containers (API)
   pve-status                  Display cluster membership/status (API)
+  pve-snapshot [--refresh]    Storage, networks, realms/users/ACL, HA, backups (API, cached
+                              in /tmp/pve-snapshot; refreshed in background at shell start)
   pve-inventory               Display inventory hosts/groups (local)
   pve-ping [group]            Verify Ansible SSH connectivity
   pve-shell GROUP 'COMMAND'   Run command on hosts via Ansible/SSH
@@ -23,6 +25,7 @@ pve-doctor() { px doctor "$@"; }
 pve-nodes() { px nodes "$@"; }
 pve-guests() { px guests "$@"; }
 pve-status() { px status "$@"; }
+pve-snapshot() { px snapshot "$@"; }
 pve-inventory() { ansible-inventory --graph "$@"; }
 pve-ping() { ansible "${1:-proxmox_nodes}" -m ansible.builtin.ping; }
 pve-shell() {

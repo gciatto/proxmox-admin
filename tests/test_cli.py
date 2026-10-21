@@ -45,6 +45,22 @@ class ConfigTests(unittest.TestCase):
             self.assertEqual(main(["nodes"]), 2)
             self.assertIn("Missing API configuration", stderr.getvalue())
 
+    def test_snapshot_fails_once_without_caching_when_api_unreachable(self):
+        class Unreachable:
+            def __getattr__(self, name):
+                raise ConnectionError("Connection refused")
+
+        with TemporaryDirectory() as d, patch.dict(os.environ, {
+            "PROXMOX_HOST": "pve.example.org",
+            "PROXMOX_TOKEN_ID": "alice@pve!cli",
+            "PROXMOX_TOKEN_SECRET": "abc",
+        }, clear=True), patch("pxadmin.cli.connect", return_value=Unreachable()), \
+                patch("pxadmin.snapshot.DIR_SNAPSHOT", Path(d)), \
+                contextlib.redirect_stderr(io.StringIO()) as stderr:
+            self.assertNotEqual(main(["snapshot"]), 0)
+            self.assertEqual(stderr.getvalue().count("Connection refused"), 1)
+            self.assertEqual(list(Path(d).iterdir()), [])
+
     def test_json_output(self):
         with contextlib.redirect_stdout(io.StringIO()) as stdout:
             print_result([{"node": "pve1", "status": "online"}], True)
