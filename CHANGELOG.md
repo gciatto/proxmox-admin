@@ -1,3 +1,9 @@
+## [1.2.1](https://github.com/gciatto/proxmox-admin/compare/1.2.0...1.2.1) (2026-10-21)
+
+### Bug Fixes
+
+* **ansible:** pass only the token name as api_token_id ([90f2452](https://github.com/gciatto/proxmox-admin/commit/90f2452db2e0220a92c66c05f981b069ea8d10f2))
+
 ## [1.2.0](https://github.com/gciatto/proxmox-admin/compare/1.1.0...1.2.0) (2026-10-21)
 
 ### Features
