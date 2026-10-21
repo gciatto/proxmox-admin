@@ -9,7 +9,7 @@
         api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
         api_port: "{{ lookup('env', 'PROXMOX_PORT') | default('8006', true) | int }}"
         api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
-        api_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"
+        api_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID').split('!', 1)[-1] }}"
         api_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
         validate_certs: "{{ lookup('env', 'PROXMOX_VALIDATE_CERTS') | bool }}"
         ca_path: "{{ lookup('env', 'PROXMOX_CA_BUNDLE') | default(omit, true) }}"
