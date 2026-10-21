@@ -1,5 +1,38 @@
 export PATH="/usr/local/bin:$PATH"
+
+# History persists per workspace in the mounted cache (.local/cache on the host).
+# Commands starting with a space are not recorded: use that for anything sensitive.
+HISTFILE=$HOME/.cache/zsh_history
+HISTSIZE=10000
+SAVEHIST=10000
+setopt HIST_IGNORE_SPACE HIST_IGNORE_ALL_DUPS HIST_REDUCE_BLANKS SHARE_HISTORY
+# Safety: > never truncates an existing file (use >| to force); rm * asks and waits.
+setopt NO_CLOBBER RM_STAR_WAIT INTERACTIVE_COMMENTS
+
+autoload -Uz compinit && compinit -d "$HOME/.cache/zcompdump"
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+
+bindkey -e
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search '^[OA' up-line-or-beginning-search
+bindkey '^[[B' down-line-or-beginning-search '^[OB' down-line-or-beginning-search
+
+autoload -Uz vcs_info
+zstyle ':vcs_info:git:*' formats ' %F{magenta}(%b)%f'
+precmd() { vcs_info }
+setopt PROMPT_SUBST
+# Cluster name and the API endpoint in the prompt, so it is always clear what commands act on.
+PROMPT='%F{yellow}[pve:${CLUSTER_NAME:-${PROXMOX_HOST:-?}}]%f %F{cyan}%~%f${vcs_info_msg_0_} %(?..%F{red}%?%f )%# '
+
+alias ls='ls --color=auto' ll='ls -lh' la='ls -lAh' grep='grep --color=auto'
+
 source /opt/proxmox-admin/shell-extensions.zsh
+source /usr/share/zsh-autosuggestions/zsh-autosuggestions.zsh
+source /usr/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh # must be last
+
 if [[ -o interactive ]]; then
   # Warm the snapshot cache for pve-snapshot and AI agents, without delaying the prompt.
   [[ -s ${PROXMOX_TOKEN_SECRET_FILE:-/run/secrets/proxmox-token} ]] && (px snapshot --quiet >/dev/null 2>&1 &)

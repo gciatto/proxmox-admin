@@ -9,6 +9,7 @@ The image includes:
 - **Python** + Proxmoxer, exposing the `px` read-only cluster inspection CLI;
 - **Claude Code** (`claude`) and **Codex** (`codex`), to operate the cluster with AI assistance;
 - `ssh`, `ssh-agent`, `git`, `jq`, `ripgrep`, Zsh helper functions, built-in playbooks.
+- A preconfigured Zsh: completion, autosuggestions, syntax highlighting, a prompt showing the cluster, and history kept per workspace in `.local/cache` (commands starting with a space are not recorded). `>` never overwrites an existing file (`>|` forces it), and `rm *` asks first.
 
 ## How it is used: one configuration repository per cluster
 

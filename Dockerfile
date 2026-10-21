@@ -18,7 +18,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     DISABLE_AUTOUPDATER=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates openssh-client zsh git curl jq ripgrep tini gosu passwd \
+      ca-certificates openssh-client zsh zsh-autosuggestions zsh-syntax-highlighting git curl jq ripgrep tini gosu passwd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=opentofu /usr/local/bin/tofu /usr/local/bin/tofu
