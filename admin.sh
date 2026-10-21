@@ -17,6 +17,17 @@ export ADMIN_UID="$(id -u)"
 export ADMIN_GID="$(id -g)"
 export HOST_SSH_DIR="${HOST_SSH_DIR:-${HOME}/.ssh}"
 export HOST_PROXMOX_TOKEN_FILE="${HOST_PROXMOX_TOKEN_FILE:-${HOME}/.config/proxmox-admin/token}"
+# AI CLI configuration (read-write: logins, settings, sessions). Defaults to the user's own,
+# falling back to a checkout-local directory for users without one.
+if [[ -z "${HOST_CLAUDE_DIR:-}" ]]; then
+    HOST_CLAUDE_DIR="${HOME}/.claude"
+    [[ -d "$HOST_CLAUDE_DIR" ]] || HOST_CLAUDE_DIR="$PWD/.local/claude"
+fi
+if [[ -z "${HOST_CODEX_DIR:-}" ]]; then
+    HOST_CODEX_DIR="${CODEX_HOME:-${HOME}/.codex}"
+    [[ -d "$HOST_CODEX_DIR" ]] || HOST_CODEX_DIR="$PWD/.local/codex"
+fi
+export HOST_CLAUDE_DIR HOST_CODEX_DIR
 
 if [[ ! -d "$HOST_SSH_DIR" ]]; then
     echo "SSH directory missing: $HOST_SSH_DIR" >&2
@@ -25,7 +36,7 @@ if [[ ! -d "$HOST_SSH_DIR" ]]; then
 fi
 
 umask 077
-mkdir -p .local/cache/tofu/plugins
+mkdir -p .local/cache/tofu/plugins "$HOST_CLAUDE_DIR" "$HOST_CODEX_DIR"
 mkdir -p "$(dirname "$HOST_PROXMOX_TOKEN_FILE")"
 if [[ ! -e "$HOST_PROXMOX_TOKEN_FILE" ]]; then
     : > "$HOST_PROXMOX_TOKEN_FILE"

@@ -14,6 +14,7 @@ Proxmox admin commands:
   pve-agent [KEY]             Start ssh-agent and add mounted private key
 
 Native commands also work: px, ansible, ansible-playbook, tofu, ssh, jq.
+AI assistants (see AGENTS.md for their rules here): claude, codex.
 USAGE
 }
 

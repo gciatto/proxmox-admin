@@ -3,26 +3,14 @@
   "extends": [
     "config:recommended",
     ":rebaseStalePrs",
-    ":semanticCommits"
+    ":semanticCommits",
+    "customManagers:dockerfileVersions"
   ],
   "assignees": [
     "gciatto"
   ],
   "automerge": true,
   "dependencyDashboard": true,
-  "customManagers": [
-    {
-      "description": "Ansible collections pinned in the Dockerfile",
-      "customType": "regex",
-      "managerFilePatterns": [
-        "/(^|/)Dockerfile$/"
-      ],
-      "matchStrings": [
-        "'(?<depName>[a-z0-9_]+\\.[a-z0-9_]+):==(?<currentValue>[^']+)'"
-      ],
-      "datasourceTemplate": "galaxy-collection"
-    }
-  ],
   "packageRules": [
     {
       "description": "Updates to GitHub Actions should be tagged as 'ci'",

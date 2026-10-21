@@ -18,6 +18,11 @@ services:
       PROXMOX_SSH_USER: "${PROXMOX_SSH_USER:-root}"
       ANSIBLE_CONFIG: /workspace/ansible/ansible.cfg
       TF_PLUGIN_CACHE_DIR: /home/operator/.cache/tofu/plugins
+      # AI CLIs: credentials as alternatives to a login stored in the mounted config dirs.
+      # Passed through only when set in the invoking shell.
+      ANTHROPIC_API_KEY:
+      CLAUDE_CODE_OAUTH_TOKEN:
+      OPENAI_API_KEY:
     volumes:
       - type: bind
         source: .
@@ -33,3 +38,9 @@ services:
       - type: bind
         source: ./.local/cache
         target: /home/operator/.cache
+      - type: bind
+        source: ${HOST_CLAUDE_DIR:?Set HOST_CLAUDE_DIR via admin.sh or environment}
+        target: /home/operator/.claude
+      - type: bind
+        source: ${HOST_CODEX_DIR:?Set HOST_CODEX_DIR via admin.sh or environment}
+        target: /home/operator/.codex

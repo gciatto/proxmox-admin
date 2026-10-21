@@ -28,6 +28,8 @@ docker run --rm \
     done
 
     tofu version
+    claude --version
+    codex --version
     tofu -chdir=/workspace/tofu fmt -check -recursive
 
     zsh -fc "source /opt/proxmox-admin/.zshrc && pve-help" >/dev/null
@@ -38,12 +40,14 @@ docker run --rm \
 if [[ "$(id -u)" -ne 0 ]]; then
   tmp=$(mktemp -d)
   trap 'rm -rf "$tmp"' EXIT
-  mkdir -p "$tmp/ssh"
+  mkdir -p "$tmp/ssh" "$tmp/claude" "$tmp/codex"
   : > "$tmp/token"
   (
     cd "$repo_dir"
     HOST_SSH_DIR="$tmp/ssh" \
     HOST_PROXMOX_TOKEN_FILE="$tmp/token" \
+    HOST_CLAUDE_DIR="$tmp/claude" \
+    HOST_CODEX_DIR="$tmp/codex" \
     PVE_ADMIN_IMAGE="$image" \
       ./admin.sh px --help >/dev/null
   )

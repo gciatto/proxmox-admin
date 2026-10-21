@@ -1,6 +1,8 @@
 # syntax=docker/dockerfile:1
 # Official OpenTofu minimal image is intended for multi-stage copying.
 FROM ghcr.io/opentofu/opentofu:1-minimal AS opentofu
+# Node runtime for the AI coding CLIs (Claude Code requires Node >= 22).
+FROM node:24-bookworm-slim AS node
 
 FROM python:3.12-slim-bookworm
 
@@ -11,24 +13,44 @@ ENV DEBIAN_FRONTEND=noninteractive \
     ANSIBLE_COLLECTIONS_PATH=/opt/ansible/collections \
     ZDOTDIR=/opt/proxmox-admin \
     HOME=/home/operator \
-    TF_PLUGIN_CACHE_DIR=/home/operator/.cache/tofu/plugins
+    TF_PLUGIN_CACHE_DIR=/home/operator/.cache/tofu/plugins \
+    CLAUDE_CONFIG_DIR=/home/operator/.claude \
+    CODEX_HOME=/home/operator/.codex \
+    DISABLE_AUTOUPDATER=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      ca-certificates openssh-client zsh git curl jq tini gosu passwd \
+      ca-certificates openssh-client zsh git curl jq ripgrep tini gosu passwd \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=opentofu /usr/local/bin/tofu /usr/local/bin/tofu
+COPY --from=node /usr/local/bin/node /usr/local/bin/node
+COPY --from=node /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
+
+# Versions are kept up to date by Renovate (customManagers:dockerfileVersions).
+# renovate: datasource=galaxy-collection depName=community.proxmox
+ARG COMMUNITY_PROXMOX_VERSION=2.0.0
+# renovate: datasource=npm depName=@anthropic-ai/claude-code
+ARG CLAUDE_CODE_VERSION=2.1.306
+# renovate: datasource=npm depName=@openai/codex
+ARG CODEX_VERSION=0.163.0
+
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && npm install -g --no-fund --no-audit \
+      "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}" "@openai/codex@${CODEX_VERSION}" \
+    && npm cache clean --force
 
 WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY src ./src
 RUN pip install --no-cache-dir 'ansible-core>=2.18,<2.21' . \
-    && ansible-galaxy collection install 'community.proxmox:==2.0.0' -p /opt/ansible/collections
+    && ansible-galaxy collection install "community.proxmox:==${COMMUNITY_PROXMOX_VERSION}" -p /opt/ansible/collections
 
 COPY docker/entrypoint.sh /usr/local/bin/proxmox-entrypoint
 COPY docker/zshrc /opt/proxmox-admin/.zshrc
 COPY docker/shell-extensions.zsh /opt/proxmox-admin/shell-extensions.zsh
+# Build-time leftovers in HOME are root-owned and would not be writable by the operator UID.
 RUN chmod 0755 /usr/local/bin/proxmox-entrypoint \
+    && rm -rf /home/operator/.ansible /home/operator/.npm \
     && mkdir -p /home/operator/.cache/tofu/plugins /workspace \
     && chmod 0755 /home/operator
 

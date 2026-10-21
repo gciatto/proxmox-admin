@@ -2,17 +2,32 @@
 
 Guidance for coding agents working in this repository. User-facing docs live in `README.md`; this file covers what an agent needs to change the code safely.
 
+## Two kinds of sessions
+
+- **Developing this repository** (most of this file): you change the image, scripts, CLI or docs.
+- **Operating a cluster from inside the container**: an administrator started `claude` or `codex` in the `./admin.sh` shell (`/workspace`, with `PROXMOX_HOST` set). Read the next section first.
+
+## Operating a cluster (inside the container)
+
+You act with the administrator's own SSH keys and Proxmox API token on a live cluster, possibly in production.
+
+- Inspect with read-only commands first: `px [--json] status|nodes|guests|storage|version`, `px doctor`, `pve-inventory`, `ansible-playbook ansible/playbooks/{ping,node-facts,cluster-status,guests}.yml`, `tofu plan`.
+- **Ask before any change**: anything that starts, stops, migrates, creates, deletes or reconfigures guests, nodes, storage, users or the network; `pve-shell` / `ansible -m shell` commands that are not read-only; `tofu apply`; playbook runs that change state (run them with `--check --diff` first and show the result). State what will change, on which hosts or guests, and how to undo it.
+- Prefer changes through a playbook under `ansible/playbooks/` or an OpenTofu resource over ad-hoc commands, so they are reviewable and repeatable. Mind the OpenTofu shared-state policy in `README.md`.
+- Never print, copy or commit secrets: the token file (`/run/secrets/proxmox-token`), `PROXMOX_TOKEN_SECRET`, `PROXMOX_VE_API_TOKEN`, SSH private keys, `.env`.
+- Commits and pushes follow the Git rules below.
+
 ## What this is
 
-A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE cluster**. Operators run `./admin.sh`, which starts an ephemeral container with Ansible (`community.proxmox`), OpenTofu (`bpg/proxmox`), and `px`, a small **read-only** Python CLI over the Proxmox API.
+A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE cluster**. Operators run `./admin.sh`, which starts an ephemeral container with Ansible (`community.proxmox`), OpenTofu (`bpg/proxmox`), `px` (a small **read-only** Python CLI over the Proxmox API), and the Claude Code and Codex CLIs.
 
 ## Map
 
 | Path | Role |
 | --- | --- |
-| `admin.sh` | Host-side launcher: exports `ADMIN_UID/GID`, `HOST_SSH_DIR`, `HOST_PROXMOX_TOKEN_FILE`; creates `.local/cache` and an empty token file; `--build` / `--pull`; then `docker compose run --rm admin "$@"`. |
+| `admin.sh` | Host-side launcher: exports `ADMIN_UID/GID`, `HOST_SSH_DIR`, `HOST_PROXMOX_TOKEN_FILE`, `HOST_CLAUDE_DIR`, `HOST_CODEX_DIR` (user's `~/.claude`/`~/.codex`, else `.local/claude`/`.local/codex`); creates `.local/cache` and an empty token file; `--build` / `--pull`; then `docker compose run --rm admin "$@"`. |
 | `compose.yaml` / `compose.build.yaml` | Runtime mounts and env; the build file only adds `build: .`. Image defaults to `proxmox-admin:local`, overridden by `PVE_ADMIN_IMAGE`. |
-| `Dockerfile` | `python:3.12-slim-bookworm` + `tofu` copied from `ghcr.io/opentofu/opentofu:1-minimal`; installs `ansible-core` and the `px` package. |
+| `Dockerfile` | `python:3.12-slim-bookworm` + `tofu` from `ghcr.io/opentofu/opentofu:1-minimal` + Node from `node:24-bookworm-slim`; installs `ansible-core`, the `px` package, and Claude Code / Codex via npm. Versions pinned as `ARG`s with `# renovate:` comments. |
 | `docker/entrypoint.sh` | Runs as root, creates passwd/group entries for the host UID/GID, drops privileges via `gosu`, then derives env vars (see below). |
 | `docker/shell-extensions.zsh`, `docker/zshrc` | `pve-*` Zsh helpers: thin wrappers around `px`, `ansible`, `ansible-playbook`, `tofu`. |
 | `src/pxadmin/cli.py` | The whole `px` CLI (`doctor`, `status`, `nodes`, `guests`, `storage`, `version`, `--json`). Entry point declared in `pyproject.toml`. |
@@ -26,7 +41,7 @@ A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE c
 | `scripts/release-image.sh` | Builds and pushes the multi-arch image to GHCR; called by semantic-release only. |
 | `.github/workflows/` | `ci.yml` (tests + amd64/arm64 smoke) and `release.yml` (reuses `ci.yml`, then runs semantic-release). |
 | `package.json`, `release.config.mjs` | semantic-release: DanySK's conventional-commits preset + image push, GitHub release, release commit. |
-| `renovate.json` | Renovate; a regex manager tracks `community.proxmox` in the Dockerfile. |
+| `renovate.json` | Renovate; `customManagers:dockerfileVersions` tracks the `# renovate:` `ARG`s in the Dockerfile. |
 
 ## Checks to run before finishing
 
@@ -52,6 +67,7 @@ When you add a new setting, wire it through all of these layers: `.env.example`,
 
 ## Invariants (don't break)
 
+- **AI CLI config is mounted, never baked in.** `~/.claude` and `~/.codex` are bind-mounted read-write (`CLAUDE_CONFIG_DIR`, `CODEX_HOME`); `ANTHROPIC_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN`, `OPENAI_API_KEY` are passed through from the shell only when set.
 - **No secrets in the image or repo.** SSH keys, the token file, `.env`, the real `ansible/inventory/hosts.yml`, `config/certs/*`, and tofu state/tfvars are git-ignored *and* docker-ignored. Keep `.gitignore` and `.dockerignore` in sync.
 - **The container never runs tools as root.** The image has no baked-in user; the entrypoint creates one for `ADMIN_UID/GID`. `admin.sh` refuses to run as root. The smoke test checks UID 23456.
 - **TLS verification and SSH host-key checking stay on by default** (`PROXMOX_VALIDATE_CERTS=true`, `host_key_checking = True`). Use a CA bundle; don't disable verification.
@@ -68,7 +84,7 @@ When you add a new setting, wire it through all of these layers: `.env.example`,
 
 When you bump a version, check Proxmox VE compatibility first.
 
-- `ansible-core>=2.18,<2.21`, `community.proxmox==2.0.0` (Dockerfile)
+- `ansible-core>=2.18,<2.21`, `community.proxmox`, `@anthropic-ai/claude-code`, `@openai/codex`, Node 24 (Dockerfile)
 - `bpg/proxmox` `0.117.0`, OpenTofu `>= 1.9.0` (`tofu/versions.tf`); image uses `opentofu:1-minimal`
 - `proxmoxer>=2.3,<3`, `requests>=2.31,<3`, Python `>=3.10` (`pyproject.toml`); image and CI use 3.12
 

@@ -7,7 +7,8 @@ The image includes:
 - **Ansible** with `community.proxmox` for API administration and SSH-based host operations;
 - **OpenTofu** with the `bpg/proxmox` provider scaffold for declarative resources;
 - **Python** + Proxmoxer, exposing the `px` read-only cluster inspection CLI;
-- `ssh`, `ssh-agent`, `git`, `jq`, Zsh helper functions.
+- **Claude Code** (`claude`) and **Codex** (`codex`), to operate the cluster with AI assistance;
+- `ssh`, `ssh-agent`, `git`, `jq`, `ripgrep`, Zsh helper functions.
 
 ## Requirements
 
@@ -100,6 +101,8 @@ pve-play cluster-status      # execute a Proxmox API playbook
 pve-play guests              # query guest inventory via Ansible
 pve-tofu init                # download provider into local plugin cache
 pve-tofu plan                # show changes (initially empty)
+claude                       # Claude Code, see "AI assistants" below
+codex                        # Codex CLI
 ```
 
 The shell functions are thin conveniences; all native `ansible`, `ansible-playbook`, `tofu`, `ssh`, `python` and `px` commands work normally.
@@ -113,6 +116,26 @@ pve-agent ~/.ssh/id_ed25519
 ```
 
 `pve-agent` exports the `PROXMOX_VE_SSH_AGENT` environment variable for the OpenTofu provider. For API-token authentication with provider-side SSH, set `PROXMOX_SSH_USER` in `.env`; the provider receives `PROXMOX_VE_SSH_USERNAME`. SSH is only needed by the provider for certain resources/operations.
+
+### AI assistants (Claude Code, Codex)
+
+Inside the container, `claude` and `codex` run in `/workspace` with the same tools and credentials as you. They read `AGENTS.md` (Claude through the `CLAUDE.md` link), which tells them to inspect read-only first and to **ask before any change** to the cluster. They still act with *your* SSH keys and API token: review what they propose before approving it, and prefer a scoped token over an all-powerful one.
+
+`admin.sh` bind-mounts your own configuration, read-write, so settings, logins and session history are shared with your workstation:
+
+| Host (default) | Container | Override with |
+| --- | --- | --- |
+| `~/.claude` | `/home/operator/.claude` (`CLAUDE_CONFIG_DIR`) | `HOST_CLAUDE_DIR` |
+| `~/.codex` (or `$CODEX_HOME`) | `/home/operator/.codex` (`CODEX_HOME`) | `HOST_CODEX_DIR` |
+
+If a directory does not exist, a checkout-local one under `.local/` (ignored by Git) is used instead; set the variable to such a directory to keep your personal configuration out of the container (e.g. `HOST_CLAUDE_DIR="$PWD/.local/claude" ./admin.sh`).
+
+Authentication, either:
+
+- log in once inside the container (`claude` → `/login`, `codex login --device-auth`); the login is saved in the mounted directory. On macOS, Claude Code keeps workstation logins in the Keychain, which the container cannot read, so a first login inside the container is needed (it is stored in `~/.claude/.credentials.json`);
+- or export `ANTHROPIC_API_KEY`, `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`) or `OPENAI_API_KEY` in the shell running `./admin.sh`: they are passed through only when set.
+
+Claude Code's global settings file lives inside the mounted directory (`~/.claude/.claude.json`), not in the host's `~/.claude.json`, so first-run preferences are asked once. The CLIs are pinned in the image (auto-update is disabled) and updated through Renovate.
 
 ## Access model
 
@@ -133,6 +156,7 @@ Per-operator tokens should be scoped and revocable; if using privilege-separated
 ├── compose.yaml                   # bind mounts, UID/GID, runtime vars
 ├── compose.build.yaml             # optional local image build
 ├── docker/                        # entrypoint + interactive Zsh functions
+├── AGENTS.md (CLAUDE.md)          # rules for AI agents: developing and operating
 ├── src/pxadmin/                   # Python read-only REST API CLI
 ├── tests/                         # CLI unit tests
 ├── scripts/                       # checks, Git hooks, smoke and release scripts
