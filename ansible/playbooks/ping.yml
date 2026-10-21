@@ -1,0 +1,7 @@
+---
+- name: Verify SSH connectivity to Proxmox nodes
+  hosts: proxmox_nodes
+  gather_facts: false
+  tasks:
+    - name: Test SSH and Python availability
+      ansible.builtin.ping:

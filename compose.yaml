@@ -1,0 +1,35 @@
+services:
+  admin:
+    image: ${PVE_ADMIN_IMAGE:-proxmox-admin:local}
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    environment:
+      HOME: /home/operator
+      ADMIN_UID: "${ADMIN_UID:-1000}"
+      ADMIN_GID: "${ADMIN_GID:-1000}"
+      PROXMOX_HOST: "${PROXMOX_HOST:-}"
+      PROXMOX_PORT: "${PROXMOX_PORT:-8006}"
+      PROXMOX_USER: "${PROXMOX_USER:-}"
+      PROXMOX_TOKEN_ID: "${PROXMOX_TOKEN_ID:-}"
+      PROXMOX_TOKEN_SECRET_FILE: /run/secrets/proxmox-token
+      PROXMOX_VALIDATE_CERTS: "${PROXMOX_VALIDATE_CERTS:-true}"
+      PROXMOX_CA_BUNDLE: "${PROXMOX_CA_BUNDLE:-}"
+      PROXMOX_SSH_USER: "${PROXMOX_SSH_USER:-root}"
+      ANSIBLE_CONFIG: /workspace/ansible/ansible.cfg
+      TF_PLUGIN_CACHE_DIR: /home/operator/.cache/tofu/plugins
+    volumes:
+      - type: bind
+        source: .
+        target: /workspace
+      - type: bind
+        source: ${HOST_SSH_DIR:?Set HOST_SSH_DIR via admin.sh or environment}
+        target: /home/operator/.ssh
+        read_only: true
+      - type: bind
+        source: ${HOST_PROXMOX_TOKEN_FILE:?Set HOST_PROXMOX_TOKEN_FILE via admin.sh or environment}
+        target: /run/secrets/proxmox-token
+        read_only: true
+      - type: bind
+        source: ./.local/cache
+        target: /home/operator/.cache

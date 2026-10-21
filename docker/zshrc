@@ -1,0 +1,5 @@
+export PATH="/usr/local/bin:$PATH"
+source /opt/proxmox-admin/shell-extensions.zsh
+if [[ -o interactive ]]; then
+  pve-help
+fi

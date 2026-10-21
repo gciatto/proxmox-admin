@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+      - master
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source-tests:
+    name: Source tests and static checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate shell scripts
+        run: |
+          bash -n admin.sh
+          bash -n scripts/smoke-image.sh
+          sh -n docker/entrypoint.sh
+      - name: Validate YAML files and workflow triggers
+        run: |
+          python -m pip install 'PyYAML>=6,<7'
+          python scripts/check-yaml.py
+      - name: Run Python unit tests
+        run: python -m unittest discover -s tests -v
+
+  image-smoke:
+    name: Docker smoke test (${{ matrix.arch }})
+    needs: source-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Enable emulated architectures
+        uses: docker/setup-qemu-action@v4
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build single-platform image for testing (do not push)
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/${{ matrix.arch }}
+          load: true
+          push: false
+          tags: proxmox-admin:ci-${{ matrix.arch }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Exercise installed tools without cluster credentials
+        run: bash scripts/smoke-image.sh proxmox-admin:ci-${{ matrix.arch }}

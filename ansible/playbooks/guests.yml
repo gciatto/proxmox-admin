@@ -1,0 +1,21 @@
+---
+- name: Inspect guest inventory through API
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Fetch VMs and LXC containers
+      community.proxmox.proxmox_vm_info:
+        api_host: "{{ lookup('env', 'PROXMOX_HOST') }}"
+        api_port: "{{ lookup('env', 'PROXMOX_PORT') | default('8006', true) | int }}"
+        api_user: "{{ lookup('env', 'PROXMOX_USER') }}"
+        api_token_id: "{{ lookup('env', 'PROXMOX_TOKEN_ID') }}"
+        api_token_secret: "{{ lookup('env', 'PROXMOX_TOKEN_SECRET') }}"
+        validate_certs: "{{ lookup('env', 'PROXMOX_VALIDATE_CERTS') | bool }}"
+        ca_path: "{{ lookup('env', 'PROXMOX_CA_BUNDLE') | default(omit, true) }}"
+      register: guests
+      no_log: true
+
+    - name: Show guest inventory
+      ansible.builtin.debug:
+        var: guests.proxmox_vms

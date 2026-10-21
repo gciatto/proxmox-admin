@@ -1,0 +1,10 @@
+.git
+.env
+.local
+ansible/inventory/hosts.yml
+config/certs/
+**/.terraform/
+**/*.tfstate*
+**/*.tfvars*
+__pycache__/
+*.egg-info/

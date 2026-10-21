@@ -1,0 +1,13 @@
+---
+- name: Inspect Proxmox hypervisor nodes over SSH
+  hosts: proxmox_nodes
+  gather_facts: true
+  tasks:
+    - name: Read Proxmox version
+      ansible.builtin.command: pveversion
+      register: pveversion_result
+      changed_when: false
+
+    - name: Display node and version
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }}: {{ pveversion_result.stdout }}"
