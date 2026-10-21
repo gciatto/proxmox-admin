@@ -41,7 +41,7 @@ RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
 WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY src ./src
-RUN pip install --no-cache-dir 'ansible-core>=2.18,<2.21' . \
+RUN pip install --no-cache-dir 'ansible-core>=2.18,<2.21' 'passlib>=1.7,<2' . \
     && ansible-galaxy collection install "community.proxmox:==${COMMUNITY_PROXMOX_VERSION}" -p /opt/ansible/collections
 
 COPY docker/entrypoint.sh /usr/local/bin/proxmox-entrypoint

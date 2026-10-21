@@ -21,6 +21,7 @@ docker run --rm \
 
     ansible --version
     ansible-galaxy collection list community.proxmox
+    ansible localhost -m debug -a "msg={{ \"x\" | password_hash(\"sha512\") }}" >/dev/null # needs passlib
     ansible-inventory -i /workspace/ansible/inventory/hosts.yml.example --list >/dev/null
     for playbook in /workspace/ansible/playbooks/*.yml; do
       ansible-playbook -i /workspace/ansible/inventory/hosts.yml.example \
