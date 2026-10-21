@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":rebaseStalePrs",
+    ":semanticCommits"
+  ],
+  "assignees": [
+    "gciatto"
+  ],
+  "automerge": true,
+  "dependencyDashboard": true,
+  "customManagers": [
+    {
+      "description": "Ansible collections pinned in the Dockerfile",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Dockerfile$/"
+      ],
+      "matchStrings": [
+        "'(?<depName>[a-z0-9_]+\\.[a-z0-9_]+):==(?<currentValue>[^']+)'"
+      ],
+      "datasourceTemplate": "galaxy-collection"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Updates to GitHub Actions should be tagged as 'ci'",
+      "matchFileNames": [
+        ".github/workflows/*.yml",
+        ".github/workflows/*.yaml"
+      ],
+      "semanticCommitType": "ci"
+    },
+    {
+      "description": "Updates of what ships in the image trigger a patch release (see release.config.mjs)",
+      "matchFileNames": [
+        "Dockerfile",
+        "pyproject.toml",
+        "tofu/**"
+      ],
+      "semanticCommitType": "chore",
+      "semanticCommitScope": "core-deps"
+    }
+  ],
+  "prConcurrentLimit": 25,
+  "prHourlyLimit": 0,
+  "separateMajorMinor": true,
+  "separateMinorPatch": true,
+  "separateMultipleMajor": true
+}

@@ -1,20 +1,18 @@
-name: Test and publish image
+name: Release
 
 on:
   push:
     branches:
       - main
       - master
-    tags:
-      - 'v*'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-# Never publish from a pull request. A version tag or a protected primary branch
-# is the only source of images with team-wide tags.
+# Releases are strictly sequential; never publish from a pull request.
 concurrency:
-  group: image-publish-${{ github.ref }}
+  group: release
   cancel-in-progress: false
 
 jobs:
@@ -24,81 +22,43 @@ jobs:
     permissions:
       contents: read
 
-  publish:
-    name: Publish multi-platform image to GHCR
+  release:
+    name: Release with semantic-release (GitHub release + GHCR image)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: verify
     permissions:
-      contents: read
+      contents: write
+      issues: write
+      pull-requests: write
       packages: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-      - name: Validate version tag
-        if: github.ref_type == 'tag'
-        env:
-          RELEASE_TAG: ${{ github.ref_name }}
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z][0-9A-Za-z.-]*)?$ ]]; then
-            echo "Invalid release tag: $RELEASE_TAG (expected vMAJOR.MINOR.PATCH[-PRERELEASE])" >&2
-            exit 1
-          fi
-      - name: Normalize GHCR image name
-        id: image
-        env:
-          REPOSITORY: ${{ github.repository }}
-        run: echo "name=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+        with:
+          fetch-depth: 0 # all history and tags, for semantic-release
+          # Let semantic-release push with its own token (RELEASE_TOKEN may bypass branch protection).
+          persist-credentials: false
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
       - name: Set up Buildx
         uses: docker/setup-buildx-action@v4
-      - name: Generate tags and OCI labels
-        id: meta
-        uses: docker/metadata-action@v6
-        with:
-          images: ${{ steps.image.outputs.name }}
-          flavor: |
-            latest=false
-          tags: |
-            type=raw,value=edge,enable=${{ github.ref_type == 'branch' }}
-            type=raw,value=latest,enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
-            type=ref,event=tag
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}},enable=${{ github.ref_type == 'tag' && !contains(github.ref_name, '-') }}
-            type=sha,format=short,prefix=sha-
       - name: Authenticate to GitHub Container Registry
         uses: docker/login-action@v4
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and publish tested multi-platform image
-        id: build
-        uses: docker/build-push-action@v7
+      - name: Get Node version
+        id: node
+        run: echo "version=$(jq -r .engines.node package.json)" >> "$GITHUB_OUTPUT"
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: mode=max
-          sbom: true
-      - name: Report image and digest
-        env:
-          IMAGE: ${{ steps.image.outputs.name }}
-          DIGEST: ${{ steps.build.outputs.digest }}
-          TAGS: ${{ steps.meta.outputs.tags }}
+          node-version: ${{ steps.node.outputs.version }}
+      - name: Release
         run: |
-          {
-            echo '### Published container image'
-            echo ''
-            echo "Digest: \`$IMAGE@$DIGEST\`"
-            echo ''
-            echo 'Tags:'
-            echo '```text'
-            echo "$TAGS"
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          npm install
+          npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}

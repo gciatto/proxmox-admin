@@ -27,5 +27,5 @@ ci = yaml.load((WORKFLOWS / "ci.yml").read_text(), Loader=yaml.BaseLoader)
 release = yaml.load((WORKFLOWS / "release.yml").read_text(), Loader=yaml.BaseLoader)
 assert "workflow_call" in ci["on"], "CI must be callable as a release prerequisite"
 assert "pull_request" in ci["on"], "CI must run for pull requests"
-assert release["jobs"]["publish"]["needs"] == "verify", "Publishing must depend on tests"
+assert release["jobs"]["release"]["needs"] == "verify", "Releasing must depend on tests"
 assert release["jobs"]["verify"]["uses"] == "./.github/workflows/ci.yml"

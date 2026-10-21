@@ -19,17 +19,19 @@ A Docker/Compose "admin workstation" image for operating a **remote Proxmox VE c
 | `tests/test_cli.py` | stdlib `unittest` tests for `px`. |
 | `ansible/` | `ansible.cfg`, example inventory (group `proxmox_nodes`), and playbooks: `ping`, `node-facts` (SSH), `cluster-status`, `guests` (API on `localhost`). |
 | `tofu/` | Provider scaffold only, with **no managed resources** on purpose. |
-| `scripts/check-yaml.py` | YAML parse check plus assertions on CI/release workflow wiring. |
+| `scripts/check.sh` | All source checks (shell syntax, YAML); `--test` adds unit tests. Used by CI and the Git hooks. |
+| `scripts/check-yaml.py` | YAML parse check plus assertions on CI/release workflow wiring. Needs PyYAML; `check.sh` skips it if missing. |
 | `scripts/smoke-image.sh` | Runs tools inside a built image under an arbitrary UID/GID, with no cluster access. |
-| `.github/workflows/` | `ci.yml` (tests + amd64/arm64 smoke) and `release.yml` (reuses `ci.yml`, then pushes to GHCR). |
+| `scripts/githooks.py` | Installs/removes local Git hooks (`install|uninstall [HOOK...]`); also the commit-msg checks. |
+| `scripts/release-image.sh` | Builds and pushes the multi-arch image to GHCR; called by semantic-release only. |
+| `.github/workflows/` | `ci.yml` (tests + amd64/arm64 smoke) and `release.yml` (reuses `ci.yml`, then runs semantic-release). |
+| `package.json`, `release.config.mjs` | semantic-release: DanySK's conventional-commits preset + image push, GitHub release, release commit. |
+| `renovate.json` | Renovate; a regex manager tracks `community.proxmox` in the Dockerfile. |
 
 ## Checks to run before finishing
 
 ```bash
-python3 -m unittest discover -s tests -v
-python3 scripts/check-yaml.py            # needs PyYAML>=6,<7
-bash -n admin.sh scripts/smoke-image.sh
-sh -n docker/entrypoint.sh
+bash scripts/check.sh --test             # YAML part needs PyYAML>=6,<7, otherwise skipped
 # When the Dockerfile, docker/, ansible/ or tofu/ changes (needs Docker):
 docker build -t proxmox-admin:ci . && bash scripts/smoke-image.sh proxmox-admin:ci
 ```
@@ -58,7 +60,8 @@ When you add a new setting, wire it through all of these layers: `.env.example`,
 - In-container paths are hard-coded to `/workspace` (inventory, `ansible.cfg`, playbooks, tofu dir) and `/home/operator`.
 - `tofu/` must pass `tofu fmt -check -recursive`. Don't add managed resources without the shared-remote-state setup described in the README.
 - `release.yml` must keep `publish.needs: verify` and `verify.uses: ./.github/workflows/ci.yml`. `ci.yml` must keep `pull_request` and `workflow_call` triggers. `check-yaml.py` asserts all of these.
-- Release tags must match `vMAJOR.MINOR.PATCH[-PRERELEASE]`. A tag with a pre-release suffix never gets `:latest`.
+- Releases are made only by semantic-release on `main`/`master`: never create tags (plain `1.2.3`, no `v`) or bump `pyproject.toml`'s version by hand. `CHANGELOG.md` is generated.
+- The image is pushed in semantic-release's `prepare` step, before the release commit and tag, so a failed push releases nothing. Keep that order in `release.config.mjs`.
 
 ## Pinned versions
 
@@ -70,7 +73,8 @@ When you bump a version, check Proxmox VE compatibility first.
 
 ## Git
 
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): summary`, e.g. `feat(px): add storage subcommand`, `fix(entrypoint): ...`, `ci: ...`, `docs: ...`.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/): `type(scope): summary`, e.g. `feat(px): add storage subcommand`, `fix(entrypoint): ...`, `ci: ...`, `docs: ...`. They drive releases, so pick the type carefully: `feat` = minor; `fix`, `docs`, `revert`, `chore(core-deps)` = patch; `!` = major; other types release nothing.
+- Local hooks (`python3 scripts/githooks.py install`) enforce the two rules below plus `check.sh` on commit and `check.sh --test` on push.
 - No AI attribution in commits: no `Co-Authored-By:` trailers for agents, no "Generated with ..." lines.
 - Agents may commit on their own initiative while working on a task, but must **always ask before pushing** (including tags, which trigger releases).
 
