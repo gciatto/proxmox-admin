@@ -1,3 +1,9 @@
+## [1.2.0](https://github.com/gciatto/proxmox-admin/compare/1.1.0...1.2.0) (2026-10-21)
+
+### Features
+
+* add px get and px snapshot to inspect clusters, warmed up at shell start ([14648f5](https://github.com/gciatto/proxmox-admin/commit/14648f55ebc75393f31d524de7a76f5efe5496a6))
+
 ## [1.1.0](https://github.com/gciatto/proxmox-admin/compare/1.0.0...1.1.0) (2026-10-21)
 
 ### Features
