@@ -12,7 +12,7 @@ The image includes:
 
 ## How it is used: one configuration repository per cluster
 
-This repository is the **tool**: it builds, tests and releases the image to GHCR. Each cluster gets its own **configuration repository**, created from [template-proxmox-cluster](https://github.com/gciatto/template-proxmox-cluster) and shared by that cluster's administrators. It holds the shared settings (`cluster.env`), inventory, playbooks, OpenTofu resources, CA bundle and the rules for AI agents, pins an image version in its `compose.yaml` (upgraded by Renovate), and ships the `admin.sh` launcher. Personal secrets stay on each workstation. **Start there** to administer a cluster.
+This repository is the **tool**: it builds, tests and releases the image to GHCR. Each cluster gets its own **configuration repository**, created from [template-proxmox-cluster](https://github.com/gciatto/template-proxmox-cluster) and shared by that cluster's administrators. It holds the shared settings (`cluster.env`), inventory, playbooks, OpenTofu resources, CA bundle and the rules for AI agents, and pins an image version in `cluster.env` (upgraded by Renovate). Its `admin.sh` is a stub: the launcher (`admin.sh` + `compose.yaml` of this repository) ships in the image, under `/opt/proxmox-admin/launcher/`, and the stub extracts it from the pinned image and runs it with `PVE_WORKSPACE` set to the cluster repository. One launcher, always matching the image version. Personal secrets stay on each workstation. **Start there** to administer a cluster.
 
 ### Requirements
 
@@ -25,11 +25,11 @@ Use scoped personal accounts/tokens with permissions appropriate to each operato
 
 ### Image contract
 
-The launcher (`admin.sh` + `compose.yaml`, here and in the template) runs an ephemeral container as the workstation's UID/GID (the entrypoint drops root privileges), with:
+The launcher (`admin.sh` + `compose.yaml`) runs an ephemeral container as the workstation's UID/GID (the entrypoint drops root privileges), with:
 
 | Mount | Container path | Notes |
 | --- | --- | --- |
-| Cluster repository (or this checkout) | `/workspace` | Read-write. |
+| `PVE_WORKSPACE`: cluster repository (default: this checkout) | `/workspace` | Read-write; `cluster.env` and `.env` there are loaded into the container. |
 | `HOST_SSH_DIR` (default `~/.ssh`) | `/home/operator/.ssh` | Read-only. |
 | `HOST_PROXMOX_TOKEN_FILE` | `/run/secrets/proxmox-token` | Read-only; empty for SSH-only use. |
 | `HOST_CLAUDE_DIR`, `HOST_CODEX_DIR` | `/home/operator/.claude`, `/home/operator/.codex` | See [AI assistants](#ai-assistants-claude-code-codex). |

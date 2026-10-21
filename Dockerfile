@@ -48,6 +48,8 @@ COPY docker/entrypoint.sh /usr/local/bin/proxmox-entrypoint
 COPY docker/pve-validate /usr/local/bin/pve-validate
 COPY docker/zshrc /opt/proxmox-admin/.zshrc
 COPY docker/shell-extensions.zsh /opt/proxmox-admin/shell-extensions.zsh
+# Launcher, extracted and run on the host by cluster repositories' admin.sh stub.
+COPY admin.sh compose.yaml /opt/proxmox-admin/launcher/
 # Defaults for cluster repositories mounted at /workspace, which may override them.
 COPY ansible/ansible.cfg /opt/proxmox-admin/ansible/ansible.cfg
 COPY ansible/playbooks /opt/proxmox-admin/ansible/playbooks

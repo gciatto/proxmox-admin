@@ -1,22 +1,20 @@
 services:
   admin:
+    # Shipped in the image with admin.sh (see there); relative paths resolve against the
+    # workspace: the cluster repository, or this checkout.
     image: ${PVE_ADMIN_IMAGE:-proxmox-admin:local}
     working_dir: /workspace
     stdin_open: true
     tty: true
+    env_file:
+      - path: cluster.env # shared settings of a cluster repository, committed
+        required: false
+      - path: .env # personal settings, untracked
+        required: false
     environment:
-      HOME: /home/operator
       ADMIN_UID: "${ADMIN_UID:-1000}"
       ADMIN_GID: "${ADMIN_GID:-1000}"
-      PROXMOX_HOST: "${PROXMOX_HOST:-}"
-      PROXMOX_PORT: "${PROXMOX_PORT:-8006}"
-      PROXMOX_USER: "${PROXMOX_USER:-}"
-      PROXMOX_TOKEN_ID: "${PROXMOX_TOKEN_ID:-}"
       PROXMOX_TOKEN_SECRET_FILE: /run/secrets/proxmox-token
-      PROXMOX_VALIDATE_CERTS: "${PROXMOX_VALIDATE_CERTS:-true}"
-      PROXMOX_CA_BUNDLE: "${PROXMOX_CA_BUNDLE:-}"
-      PROXMOX_SSH_USER: "${PROXMOX_SSH_USER:-root}"
-      TF_PLUGIN_CACHE_DIR: /home/operator/.cache/tofu/plugins
       # AI CLIs: credentials as alternatives to a login stored in the mounted config dirs.
       # Passed through only when set in the invoking shell.
       ANTHROPIC_API_KEY:

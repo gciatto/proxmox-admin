@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
+# Launcher of the admin container, also shipped in the image (/opt/proxmox-admin/launcher).
+# Cluster repositories run it through their admin.sh stub, which extracts it from the pinned
+# image and sets PVE_WORKSPACE (the repository) and PVE_ADMIN_IMAGE. Run from this checkout,
+# the workspace is the checkout itself.
+launcher_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+cd "${PVE_WORKSPACE:-$launcher_dir}"
 
 if ! command -v docker >/dev/null 2>&1; then
     echo 'Docker and Docker Compose v2 are required.' >&2
@@ -13,12 +18,23 @@ if [[ "$(id -u)" -eq 0 ]]; then
     exit 2
 fi
 
+# One token secret per cluster, named after CLUSTER_NAME in cluster.env.
+token_dir="${HOME}/.config/proxmox-admin"
+if [[ -f cluster.env ]]; then
+    cluster_name=$(sed -n 's/^CLUSTER_NAME=//p' cluster.env)
+    if [[ ! "$cluster_name" =~ ^[A-Za-z0-9._-]+$ ]]; then
+        echo 'Set CLUSTER_NAME in cluster.env (letters, digits, ".", "_", "-").' >&2
+        exit 2
+    fi
+    token_dir="${token_dir}/${cluster_name}"
+fi
+
 export ADMIN_UID="$(id -u)"
 export ADMIN_GID="$(id -g)"
 export HOST_SSH_DIR="${HOST_SSH_DIR:-${HOME}/.ssh}"
-export HOST_PROXMOX_TOKEN_FILE="${HOST_PROXMOX_TOKEN_FILE:-${HOME}/.config/proxmox-admin/token}"
+export HOST_PROXMOX_TOKEN_FILE="${HOST_PROXMOX_TOKEN_FILE:-${token_dir}/token}"
 # AI CLI configuration (read-write: logins, settings, sessions). Defaults to the user's own,
-# falling back to a checkout-local directory for users without one.
+# falling back to a workspace-local directory for users without one.
 if [[ -z "${HOST_CLAUDE_DIR:-}" ]]; then
     HOST_CLAUDE_DIR="${HOME}/.claude"
     [[ -d "$HOST_CLAUDE_DIR" ]] || HOST_CLAUDE_DIR="$PWD/.local/claude"
@@ -46,16 +62,21 @@ if [[ ! -f "$HOST_PROXMOX_TOKEN_FILE" ]]; then
     exit 2
 fi
 
+# Relative paths in the Compose files resolve against the workspace. An explicit -f disables
+# the automatic compose.override.yaml, so it is added back when present.
+compose=(docker compose --project-directory "$PWD" -f "$launcher_dir/compose.yaml")
+[[ -f compose.override.yaml ]] && compose+=(-f compose.override.yaml)
+
 if [[ "${1:-}" == '--build' ]]; then
-    docker compose -f compose.yaml -f compose.build.yaml build admin
+    "${compose[@]}" -f compose.build.yaml build admin
     shift
 elif [[ "${1:-}" == '--pull' ]]; then
-    docker compose pull admin
+    "${compose[@]}" pull admin
     shift
 fi
 
 if [[ -t 0 && -t 1 ]]; then
-    exec docker compose run --rm admin "$@"
+    exec "${compose[@]}" run --rm admin "$@"
 else
-    exec docker compose run --rm -T admin "$@"
+    exec "${compose[@]}" run --rm -T admin "$@"
 fi

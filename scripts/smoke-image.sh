@@ -66,4 +66,18 @@ if [[ "$(id -u)" -ne 0 ]]; then
     PVE_ADMIN_IMAGE="$image" \
       ./admin.sh px --help >/dev/null
   )
+
+  # As a cluster repository's admin.sh stub does: run the launcher shipped in the image.
+  mkdir -p "$tmp/launcher" "$tmp/cluster"
+  printf 'CLUSTER_NAME=smoke\nPROXMOX_HOST=pve.example.org\n' > "$tmp/cluster/cluster.env"
+  container=$(docker create "$image")
+  docker cp "$container:/opt/proxmox-admin/launcher/." "$tmp/launcher"
+  docker rm "$container" >/dev/null
+  HOST_SSH_DIR="$tmp/ssh" \
+  HOST_PROXMOX_TOKEN_FILE="$tmp/token" \
+  HOST_CLAUDE_DIR="$tmp/claude" \
+  HOST_CODEX_DIR="$tmp/codex" \
+  PVE_WORKSPACE="$tmp/cluster" \
+  PVE_ADMIN_IMAGE="$image" \
+    bash "$tmp/launcher/admin.sh" sh -c 'test "$CLUSTER_NAME" = smoke && test "$PROXMOX_HOST" = pve.example.org'
 fi
