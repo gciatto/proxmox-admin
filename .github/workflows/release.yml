@@ -34,7 +34,7 @@ jobs:
       packages: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0 # all history and tags, for semantic-release
           # Let semantic-release push with its own token (RELEASE_TOKEN may bypass branch protection).
