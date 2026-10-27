@@ -1,3 +1,13 @@
+## [1.3.3](https://github.com/gciatto/proxmox-admin/compare/1.3.2...1.3.3) (2026-10-27)
+
+### Dependency updates
+
+* **core-deps:** update dependency @openai/codex to v0.164.0 ([#13](https://github.com/gciatto/proxmox-admin/issues/13)) ([5a21060](https://github.com/gciatto/proxmox-admin/commit/5a21060f8f0bff31973e8f4ffc9a8f2e2b71e55a))
+
+### Build and continuous integration
+
+* **deps:** update astral-sh/setup-uv action to v10.3.2 ([#12](https://github.com/gciatto/proxmox-admin/issues/12)) ([134d0d3](https://github.com/gciatto/proxmox-admin/commit/134d0d3ecd84804e6726bf49c2a3db2b9e7de479))
+
 ## [1.3.2](https://github.com/gciatto/proxmox-admin/compare/1.3.1...1.3.2) (2026-10-27)
 
 ### Dependency updates
