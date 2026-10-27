@@ -1,3 +1,13 @@
+## [1.3.4](https://github.com/gciatto/proxmox-admin/compare/1.3.3...1.3.4) (2026-10-27)
+
+### Dependency updates
+
+* **core-deps:** update terraform proxmox to v0.118.1 ([#14](https://github.com/gciatto/proxmox-admin/issues/14)) ([c46bbfc](https://github.com/gciatto/proxmox-admin/commit/c46bbfca52a322b8ba0d3c36a6e58014c095acdd))
+
+### Build and continuous integration
+
+* **deps:** update actions/checkout action to v5 ([#3](https://github.com/gciatto/proxmox-admin/issues/3)) ([d2350d2](https://github.com/gciatto/proxmox-admin/commit/d2350d2475e99713f52723b30165daa55c048e71))
+
 ## [1.3.3](https://github.com/gciatto/proxmox-admin/compare/1.3.2...1.3.3) (2026-10-27)
 
 ### Dependency updates
