@@ -22,7 +22,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
       - name: Install uv
-        uses: astral-sh/setup-uv@v10.3.0
+        uses: astral-sh/setup-uv@v10.3.2
         with:
           enable-cache: true
       - name: Restore development environment
