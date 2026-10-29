@@ -1,3 +1,17 @@
+## [1.3.7](https://github.com/gciatto/proxmox-admin/compare/1.3.6...1.3.7) (2026-10-29)
+
+### Dependency updates
+
+* **core-deps:** update terraform proxmox to v0.119.0 ([#19](https://github.com/gciatto/proxmox-admin/issues/19)) ([8ffec00](https://github.com/gciatto/proxmox-admin/commit/8ffec007dd1904f5eb7fb2274ab67125ff9444ad))
+
+### Build and continuous integration
+
+* **deps:** update actions/checkout action to v6 ([#4](https://github.com/gciatto/proxmox-admin/issues/4)) ([7a64130](https://github.com/gciatto/proxmox-admin/commit/7a641302af4b374818a39768579776c44c253bf5))
+* **deps:** update actions/checkout action to v7 ([#5](https://github.com/gciatto/proxmox-admin/issues/5)) ([367b749](https://github.com/gciatto/proxmox-admin/commit/367b749254eff395d842c85445cfc2a159cc19c4))
+* **deps:** update actions/setup-node action to v5 ([#6](https://github.com/gciatto/proxmox-admin/issues/6)) ([1b564c3](https://github.com/gciatto/proxmox-admin/commit/1b564c36185a01fe24dfda451a02dba70fb6b0af))
+* **deps:** update actions/setup-node action to v6 ([#7](https://github.com/gciatto/proxmox-admin/issues/7)) ([17f34cc](https://github.com/gciatto/proxmox-admin/commit/17f34ccd60b99fceb0d50e2873126076558e2dc0))
+* **deps:** update astral-sh/setup-uv action to v10.3.3 ([#18](https://github.com/gciatto/proxmox-admin/issues/18)) ([e2f5889](https://github.com/gciatto/proxmox-admin/commit/e2f58895dc28c984a2af00cf343ec20a9a76682e))
+
 ## [1.3.6](https://github.com/gciatto/proxmox-admin/compare/1.3.5...1.3.6) (2026-10-28)
 
 ### Dependency updates
