@@ -1,3 +1,13 @@
+## [1.3.8](https://github.com/gciatto/proxmox-admin/compare/1.3.7...1.3.8) (2026-10-30)
+
+### Dependency updates
+
+* **core-deps:** update dependency @openai/codex to v0.166.0 ([#20](https://github.com/gciatto/proxmox-admin/issues/20)) ([67c7164](https://github.com/gciatto/proxmox-admin/commit/67c71643bc6178ebac90235f182c7e53cae64e67))
+
+### Build and continuous integration
+
+* **deps:** update actions/setup-node action to v7 ([#8](https://github.com/gciatto/proxmox-admin/issues/8)) ([945247b](https://github.com/gciatto/proxmox-admin/commit/945247b53100e0df9ffb4da69deaa06203cd3dd0))
+
 ## [1.3.7](https://github.com/gciatto/proxmox-admin/compare/1.3.6...1.3.7) (2026-10-29)
 
 ### Dependency updates
