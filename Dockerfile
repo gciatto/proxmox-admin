@@ -29,7 +29,7 @@ COPY --from=node /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/npm
 # renovate: datasource=galaxy-collection depName=community.proxmox
 ARG COMMUNITY_PROXMOX_VERSION=2.1.0
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
-ARG CLAUDE_CODE_VERSION=2.1.314
+ARG CLAUDE_CODE_VERSION=2.1.316
 # renovate: datasource=npm depName=@openai/codex
 ARG CODEX_VERSION=0.166.0
 
