@@ -1,3 +1,9 @@
+## [1.3.10](https://github.com/gciatto/proxmox-admin/compare/1.3.9...1.3.10) (2026-10-31)
+
+### Dependency updates
+
+* **core-deps:** update dependency @anthropic-ai/claude-code to v2.1.316 ([#22](https://github.com/gciatto/proxmox-admin/issues/22)) ([0f5818b](https://github.com/gciatto/proxmox-admin/commit/0f5818b6aa31007c62de1aadbc4c98c46bd32aa3))
+
 ## [1.3.9](https://github.com/gciatto/proxmox-admin/compare/1.3.8...1.3.9) (2026-10-30)
 
 ### Dependency updates
