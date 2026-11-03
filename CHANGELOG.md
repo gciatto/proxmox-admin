@@ -1,3 +1,10 @@
+## [1.3.11](https://github.com/gciatto/proxmox-admin/compare/1.3.10...1.3.11) (2026-11-03)
+
+### Dependency updates
+
+* **core-deps:** update terraform proxmox to v0.120.0 ([#24](https://github.com/gciatto/proxmox-admin/issues/24)) ([7803582](https://github.com/gciatto/proxmox-admin/commit/7803582bf4f8df514ecab9f262b097e20f593de3))
+* **deps:** update dependency semantic-release-preconfigured-conventional-commits to v1.1.158 ([#23](https://github.com/gciatto/proxmox-admin/issues/23)) ([03e962b](https://github.com/gciatto/proxmox-admin/commit/03e962b6813e75fe4fb1e94f66b64e239d8e4b12))
+
 ## [1.3.10](https://github.com/gciatto/proxmox-admin/compare/1.3.9...1.3.10) (2026-10-31)
 
 ### Dependency updates
