@@ -1,3 +1,9 @@
+## [1.4.0](https://github.com/gciatto/proxmox-admin/compare/1.3.14...1.4.0) (2026-11-06)
+
+### Features
+
+* **image:** remind to load an SSH key with pve-agent when no agent key is loaded ([d27d877](https://github.com/gciatto/proxmox-admin/commit/d27d8774ef28dac8b5fd2185cf3e459bd38404a0))
+
 ## [1.3.14](https://github.com/gciatto/proxmox-admin/compare/1.3.13...1.3.14) (2026-11-06)
 
 ### Dependency updates
