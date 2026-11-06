@@ -2,7 +2,7 @@
 # Official OpenTofu minimal image is intended for multi-stage copying.
 FROM ghcr.io/opentofu/opentofu:1-minimal AS opentofu
 # Node runtime for the AI coding CLIs (Claude Code requires Node >= 22).
-FROM node:24-bookworm-slim AS node
+FROM node:26-bookworm-slim AS node
 
 FROM python:3.12-slim-bookworm
 
