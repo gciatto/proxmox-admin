@@ -37,4 +37,8 @@ if [[ -o interactive ]]; then
   # Warm the snapshot cache for pve-snapshot and AI agents, without delaying the prompt.
   [[ -s ${PROXMOX_TOKEN_SECRET_FILE:-/run/secrets/proxmox-token} ]] && (px snapshot --quiet >/dev/null 2>&1 &)
   pve-help
+  # Node SSH (Ansible, pve-shell, OpenTofu) needs a key in an agent: remind when none is loaded.
+  if ! ssh-add -l >/dev/null 2>&1; then
+    print -P '%F{yellow}No SSH key loaded: node SSH will fail. Load yours with: pve-agent ~/.ssh/<your key>%f'
+  fi
 fi
