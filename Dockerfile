@@ -31,7 +31,7 @@ ARG COMMUNITY_PROXMOX_VERSION=2.1.0
 # renovate: datasource=npm depName=@anthropic-ai/claude-code
 ARG CLAUDE_CODE_VERSION=2.1.322
 # renovate: datasource=npm depName=@openai/codex
-ARG CODEX_VERSION=0.167.0
+ARG CODEX_VERSION=0.167.1
 
 RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
     && npm install -g --no-fund --no-audit \
