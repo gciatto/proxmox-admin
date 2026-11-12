@@ -1,3 +1,9 @@
+## [1.4.7](https://github.com/gciatto/proxmox-admin/compare/1.4.6...1.4.7) (2026-11-12)
+
+### Dependency updates
+
+* **core-deps:** update terraform proxmox to v0.122.0 ([#34](https://github.com/gciatto/proxmox-admin/issues/34)) ([ca7ba5b](https://github.com/gciatto/proxmox-admin/commit/ca7ba5b414ed4ae9a3487863f7b927c3940a8c22))
+
 ## [1.4.6](https://github.com/gciatto/proxmox-admin/compare/1.4.5...1.4.6) (2026-11-12)
 
 ### Dependency updates
