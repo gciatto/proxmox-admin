@@ -1,3 +1,10 @@
+## [1.4.11](https://github.com/gciatto/proxmox-admin/compare/1.4.10...1.4.11) (2026-11-17)
+
+### Dependency updates
+
+* **core-deps:** update dependency @anthropic-ai/claude-code to v2.1.326 ([#39](https://github.com/gciatto/proxmox-admin/issues/39)) ([34645ef](https://github.com/gciatto/proxmox-admin/commit/34645effe2c47e57c534bffbd7b288d0a1f3a11e))
+* **deps:** update dependency semantic-release-preconfigured-conventional-commits to v1.1.159 ([#38](https://github.com/gciatto/proxmox-admin/issues/38)) ([7304474](https://github.com/gciatto/proxmox-admin/commit/730447478f8169574edd381e196a07a181542fe1))
+
 ## [1.4.10](https://github.com/gciatto/proxmox-admin/compare/1.4.9...1.4.10) (2026-11-14)
 
 ### Dependency updates
