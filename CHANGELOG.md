@@ -1,3 +1,9 @@
+## [1.4.14](https://github.com/gciatto/proxmox-admin/compare/1.4.13...1.4.14) (2026-11-18)
+
+### Dependency updates
+
+* **core-deps:** update dependency @openai/codex to v0.170.0 ([#43](https://github.com/gciatto/proxmox-admin/issues/43)) ([f34973e](https://github.com/gciatto/proxmox-admin/commit/f34973ed180d9f055cd051d48d71d4ceccc0755c))
+
 ## [1.4.13](https://github.com/gciatto/proxmox-admin/compare/1.4.12...1.4.13) (2026-11-18)
 
 ### Dependency updates
