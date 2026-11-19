@@ -1,3 +1,9 @@
+## [1.4.15](https://github.com/gciatto/proxmox-admin/compare/1.4.14...1.4.15) (2026-11-19)
+
+### Dependency updates
+
+* **core-deps:** update terraform proxmox to v0.123.1 ([#42](https://github.com/gciatto/proxmox-admin/issues/42)) ([46d1537](https://github.com/gciatto/proxmox-admin/commit/46d15379b163b11a87ba739567478caf76bc8fbd))
+
 ## [1.4.14](https://github.com/gciatto/proxmox-admin/compare/1.4.13...1.4.14) (2026-11-18)
 
 ### Dependency updates
