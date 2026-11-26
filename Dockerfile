@@ -4,7 +4,7 @@ FROM ghcr.io/opentofu/opentofu:1-minimal AS opentofu
 # Node runtime for the AI coding CLIs (Claude Code requires Node >= 22).
 FROM node:24-bookworm-slim AS node
 
-FROM python:3.12-slim-bookworm
+FROM python:3.15-slim-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PYTHONDONTWRITEBYTECODE=1 \
